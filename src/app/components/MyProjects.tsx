@@ -101,13 +101,13 @@ export function MyProjects() {
                 <motion.div
                   className="relative h-full p-6 rounded-2xl bg-[#314A52]/50 backdrop-blur-sm border border-[#C7F711]/20 hover:border-[#C7F711]/50 transition-all duration-300 group cursor-pointer"
                   whileHover={{
-                    scale: 1.03,
-                    y: -5,
-                    boxShadow: "0 20px 40px rgba(199, 247, 17, 0.15)",
+                    scale: 1.02,
+                    y: -3,
+                    boxShadow: "0 12px 28px rgba(199, 247, 17, 0.07)",
                   }}
                 >
                   {/* Glow effect on hover */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#C7F711]/0 to-[#C7F711]/0 group-hover:from-[#C7F711]/10 group-hover:to-[#A9F42C]/10 transition-all duration-300" />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#C7F711]/0 to-[#C7F711]/0 group-hover:from-[#C7F711]/[0.04] group-hover:to-[#A9F42C]/[0.04] transition-all duration-300" />
 
                   <div className="relative z-10">
                     {/* Header */}
@@ -152,7 +152,7 @@ export function MyProjects() {
 
                   {/* Pulse animation */}
                   <motion.div
-                    className="absolute -inset-1 rounded-2xl bg-[#C7F711]/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="absolute -inset-1 rounded-2xl bg-[#C7F711]/[0.06] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                     animate={{
                       scale: [1, 1.05, 1],
                     }}

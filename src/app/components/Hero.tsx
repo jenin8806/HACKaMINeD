@@ -15,8 +15,8 @@ interface Particle {
 
 export function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouseRef = useRef({ x: -1000, y: -1000 });
   const frameRef = useRef<number>(0);
+  const mouseRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -24,14 +24,13 @@ export function Hero() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let width = window.innerWidth;
-    let height = window.innerHeight;
+    let width = 0;
+    let height = 0;
+    const N = 110;
 
     const resize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
+      width = canvas.width = canvas.offsetWidth;
+      height = canvas.height = canvas.offsetHeight;
     };
     resize();
     window.addEventListener("resize", resize);
@@ -41,8 +40,6 @@ export function Hero() {
     };
     window.addEventListener("mousemove", onMouseMove);
 
-    // Create particles
-    const N = 75;
     const particles: Particle[] = Array.from({ length: N }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
@@ -60,30 +57,25 @@ export function Hero() {
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
       time += 0.016;
-
       ctx.clearRect(0, 0, width, height);
 
       const mx = mouseRef.current.x;
       const my = mouseRef.current.y;
 
-      // Update particle positions
       for (const p of particles) {
         const dx = p.x - mx;
         const dy = p.y - my;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Fast mouse repulsion — direct force, no smoothing
         if (dist < MOUSE_RADIUS && dist > 1) {
           const force = ((MOUSE_RADIUS - dist) / MOUSE_RADIUS) * 0.09;
           p.vx += (dx / dist) * force;
           p.vy += (dy / dist) * force;
         }
 
-        // Slight random drift to keep alive
         p.vx += (Math.random() - 0.5) * 0.015;
         p.vy += (Math.random() - 0.5) * 0.015;
 
-        // Velocity cap + damping
         const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
         if (speed > 2.5) {
           p.vx = (p.vx / speed) * 2.5;
@@ -95,14 +87,12 @@ export function Hero() {
         p.x += p.vx;
         p.y += p.vy;
 
-        // Soft boundary wrap
         if (p.x < -20) p.x = width + 20;
         if (p.x > width + 20) p.x = -20;
         if (p.y < -20) p.y = height + 20;
         if (p.y > height + 20) p.y = -20;
       }
 
-      // Draw connections
       ctx.lineWidth = 0.6;
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
@@ -112,8 +102,6 @@ export function Hero() {
 
           if (dist < MAX_DIST) {
             const baseAlpha = (1 - dist / MAX_DIST) * 0.32;
-
-            // Boost lines near mouse
             const midX = (particles[i].x + particles[j].x) / 2;
             const midY = (particles[i].y + particles[j].y) / 2;
             const mdx = midX - mx;
@@ -131,7 +119,6 @@ export function Hero() {
         }
       }
 
-      // Draw particles
       for (const p of particles) {
         const pulse = Math.sin(time * 1.8 + p.pulsePhase) * 0.15 + 0.85;
         const pdx = p.x - mx;
@@ -157,7 +144,6 @@ export function Hero() {
       }
       ctx.shadowBlur = 0;
 
-      // Subtle mouse aura
       if (mx > 0 && my > 0) {
         const aura = ctx.createRadialGradient(mx, my, 0, mx, my, MOUSE_RADIUS * 0.7);
         aura.addColorStop(0, "rgba(199, 247, 17, 0.05)");
@@ -197,16 +183,6 @@ export function Hero() {
 
       {/* Hero Content */}
       <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8 text-center">
-        {/* Badge */}
-        {/* <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[#C7F711]/30 bg-[#C7F711]/10 text-[#C7F711] text-sm mb-8 backdrop-blur-sm"
-        >
-          <span className="w-2 h-2 rounded-full bg-[#C7F711] animate-pulse" />
-          AI-Powered Episodic Intelligence Platform
-        </motion.div> */}
 
         {/* Headline */}
         <motion.h1
@@ -216,16 +192,13 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.1 }}
         >
           <span className="text-[#E8E9E8] block"
-          style={
-            {
-              marginTop: 170
-            }
-          }>Turn Stories Into</span>
+          style={{
+            marginTop:180
+          }}>Turn Stories Into</span>
           <span
             className="block text-transparent bg-clip-text"
             style={{
               backgroundImage: "linear-gradient(90deg, #C7F711 0%, #A9F42C 50%, #8CB535 100%)",
-              
             }}
           >
             Binge-Worthy Episodes
@@ -293,7 +266,7 @@ export function Hero() {
           {[
             { num: 10, suffix: "K+", label: "Scripts Analyzed" },
             { num: 94, suffix: "%", label: "Avg. Retention Score" },
-            { num: 5, suffix: "×", label: "Faster Breakdown" },
+            { num: 5, suffix: "x", label: "Faster Breakdown" },
           ].map((stat, i) => (
             <div key={i} className="text-center px-6">
               <div

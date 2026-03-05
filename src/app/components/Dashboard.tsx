@@ -4,8 +4,12 @@ import { Link, useNavigate } from "react-router";
 import {
   Menu, X, FolderOpen, Brain, Plus, ArrowUp, PanelLeftClose, PanelLeft,
   Zap, Sparkles, LogOut, BarChart2, TrendingUp, Clock, Layers, FileText,
-  Code2, SlidersHorizontal, MessageSquare,
+  Code2, SlidersHorizontal, MessageSquare, ArrowLeft, Activity, Users, ChevronRight,
 } from "lucide-react";
+import {
+  AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
+} from "recharts";
 import { useUser } from "../contexts/UserContext";
 import { UserSettingsDialog } from "./UserSettingsDialog";
 import {
@@ -52,6 +56,238 @@ type ChatSession = {
   createdAt: number;
 };
 
+// ─── Episode data helpers ────────────────────────────────────────────────────
+
+function genEmotionData(ep: CanvasEpisode, idx: number) {
+  const base = (ep.cliffhangerScore + ep.pacingScore) / 2;
+  const s = idx + 1;
+  return [
+    { time: "0:00",  intensity: parseFloat(Math.max(1, base * 0.55 + s * 0.1).toFixed(1)) },
+    { time: "25%",   intensity: parseFloat(Math.max(1, base * 0.70 + s * 0.15).toFixed(1)) },
+    { time: "50%",   intensity: parseFloat(Math.max(1, base * 0.85 + s * 0.1).toFixed(1)) },
+    { time: "75%",   intensity: parseFloat(Math.min(10, base + s * 0.12).toFixed(1)) },
+    { time: "90%",   intensity: parseFloat(Math.min(10, ep.cliffhangerScore * 0.96).toFixed(1)) },
+    { time: "100%",  intensity: parseFloat(Math.min(10, ep.cliffhangerScore).toFixed(1)) },
+  ];
+}
+
+function genEngagementData(ep: CanvasEpisode) {
+  const base = 80 + ep.pacingScore * 1.4 + ep.cliffhangerScore * 0.6;
+  return [
+    { segment: "Opening",  retention: Math.min(99, Math.round(base * 0.97)) },
+    { segment: "Hook",     retention: Math.min(99, Math.round(base * 1.0)) },
+    { segment: "Dev.",     retention: Math.min(99, Math.round(base * 0.94)) },
+    { segment: "Climax",   retention: Math.min(99, Math.round(base + 0.8)) },
+    { segment: "Ending",   retention: Math.min(99, Math.round(base * 0.92)) },
+  ];
+}
+
+// ─── Episode Detail In Panel ─────────────────────────────────────────────────
+
+function EpisodeDetailInPanel({ ep, idx, onBack }: { ep: CanvasEpisode; idx: number; onBack: () => void }) {
+  const emotionData = genEmotionData(ep, idx);
+  const engagementData = genEngagementData(ep);
+
+  const emotionalIntensity = Math.min(9.9, parseFloat((ep.cliffhangerScore * 0.65 + ep.pacingScore * 0.35).toFixed(1)));
+  const audienceRetention = Math.min(99, Math.round(80 + (ep.cliffhangerScore + ep.pacingScore) * 0.85));
+
+  const narrative = [
+    { label: "Setup",         pct: Math.max(10, 22 + idx * 2),      color: "#C7F711" },
+    { label: "Rising Action", pct: Math.max(10, 35 - idx),          color: "#7DD3FC" },
+    { label: "Climax",        pct: Math.max(10, 20 + idx * 2),      color: "#F472B6" },
+    { label: "Resolution",    pct: Math.max(10, 23 - idx * 3),      color: "#86EFAC" },
+  ];
+
+  const suggestions = [
+    ep.cliffhangerScore < 8.5
+      ? { title: "Boost the Cliffhanger", desc: "The ending hook can be sharpened. Try introducing an unresolved visual surprise or question in the final 60 seconds.", impact: "High" }
+      : { title: "Cliffhanger is Excellent", desc: "Your ending hook scores very high. Maintain this momentum and consider teasing a future plot thread.", impact: "Keep" },
+    ep.pacingScore < 8.5
+      ? { title: "Tighten the Pacing", desc: "Some scenes feel stretched. Cutting 10–15% of mid-section dialogue could sharpen audience engagement.", impact: "Medium" }
+      : { title: "Pacing is Solid", desc: "The episode flows naturally. Keep using scene transitions to preserve this rhythm across the series.", impact: "Keep" },
+    { title: "Expand the Emotional Arc", desc: `Emotional intensity peaks at ${ep.cliffhangerScore}/10. Adding a quiet beat before the climax would amplify the contrast and impact.`, impact: "Medium" },
+  ];
+
+  return (
+    <motion.div
+      key={`ep-detail-${idx}`}
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      className="space-y-4"
+    >
+      {/* Back */}
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-[11px] text-[#E8E9E8]/40 hover:text-[#C7F711] transition-colors group"
+      >
+        <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
+        Back to episodes
+      </button>
+
+      {/* Episode Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-[#C7F711]/10 border border-[#C7F711]/20 flex items-center justify-center text-sm font-bold text-[#C7F711] flex-shrink-0">
+          {idx + 1}
+        </div>
+        <div>
+          <h3 className="text-base font-semibold text-[#E8E9E8] leading-tight">{ep.title}</h3>
+          <div className="flex items-center gap-2 text-[11px] text-[#E8E9E8]/35 mt-0.5">
+            <Clock className="w-3 h-3" />
+            <span>{ep.duration}</span>
+            <span className="opacity-30">·</span>
+            <span>{ep.wordCount.toLocaleString()} words</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 4 Score Cards */}
+      <div className="grid grid-cols-2 gap-2">
+        {[
+          { label: "Cliffhanger", value: ep.cliffhangerScore, color: "#C7F711", icon: <Zap className="w-3.5 h-3.5" />, max: 10 },
+          { label: "Pacing", value: ep.pacingScore, color: "#7DD3FC", icon: <TrendingUp className="w-3.5 h-3.5" />, max: 10 },
+          { label: "Emotional Intensity", value: emotionalIntensity, color: "#F472B6", icon: <Activity className="w-3.5 h-3.5" />, max: 10 },
+          { label: "Audience Retention", value: `${audienceRetention}%`, color: "#86EFAC", icon: <Users className="w-3.5 h-3.5" />, max: null },
+        ].map((m) => (
+          <div key={m.label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 hover:border-white/10 transition-colors">
+            <div className="flex items-center gap-1 mb-2" style={{ color: m.color }}>
+              {m.icon}
+              <span className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: m.color + "80" }}>{m.label}</span>
+            </div>
+            <div className="text-xl font-bold" style={{ color: m.color }}>{m.value}</div>
+            {m.max && (
+              <div className="mt-1.5 h-1 bg-white/5 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${((m.value as number) / m.max) * 100}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: m.color }}
+                />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Emotion Curve */}
+      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
+        <h4 className="text-[10px] font-semibold text-[#E8E9E8]/35 uppercase tracking-wider mb-3">Emotion Curve</h4>
+        <div className="h-36">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={emotionData} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
+              <defs>
+                <linearGradient id={`emGrad${idx}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#C7F711" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="#C7F711" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+              <XAxis dataKey="time" stroke="rgba(232,233,232,0.20)" tick={{ fontSize: 9 }} />
+              <YAxis stroke="rgba(232,233,232,0.20)" tick={{ fontSize: 9 }} domain={[0, 10]} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#0E1921",
+                  border: "1px solid rgba(199,247,17,0.25)",
+                  borderRadius: "10px",
+                  fontSize: "11px",
+                  color: "#E8E9E8",
+                }}
+                formatter={(v: number) => [v, "Intensity"]}
+              />
+              <Area type="monotone" dataKey="intensity" stroke="#C7F711" strokeWidth={2} fill={`url(#emGrad${idx})`} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Segment Retention */}
+      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
+        <h4 className="text-[10px] font-semibold text-[#E8E9E8]/35 uppercase tracking-wider mb-3">Segment Retention</h4>
+        <div className="h-36">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={engagementData} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+              <XAxis dataKey="segment" stroke="rgba(232,233,232,0.20)" tick={{ fontSize: 9 }} />
+              <YAxis stroke="rgba(232,233,232,0.20)" tick={{ fontSize: 9 }} domain={[78, 100]} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#0E1921",
+                  border: "1px solid rgba(125,211,252,0.25)",
+                  borderRadius: "10px",
+                  fontSize: "11px",
+                  color: "#E8E9E8",
+                }}
+                formatter={(v: number) => [`${v}%`, "Retention"]}
+              />
+              <Line
+                type="monotone"
+                dataKey="retention"
+                stroke="#7DD3FC"
+                strokeWidth={2}
+                dot={{ fill: "#7DD3FC", r: 4, stroke: "#0E1921", strokeWidth: 2 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Narrative Breakdown */}
+      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
+        <h4 className="text-[10px] font-semibold text-[#E8E9E8]/35 uppercase tracking-wider mb-3">Narrative Structure</h4>
+        <div className="space-y-2.5">
+          {narrative.map((n) => (
+            <div key={n.label}>
+              <div className="flex justify-between mb-1">
+                <span className="text-[10px] text-[#E8E9E8]/50">{n.label}</span>
+                <span className="text-[10px] font-mono text-[#E8E9E8]/30">{n.pct}%</span>
+              </div>
+              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${n.pct}%` }}
+                  transition={{ duration: 0.7, ease: "easeOut", delay: 0.05 }}
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: n.color }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* AI Suggestions */}
+      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
+        <h4 className="text-[10px] font-semibold text-[#E8E9E8]/35 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <Sparkles className="w-3 h-3 text-[#C7F711]" />
+          AI Suggestions
+        </h4>
+        <div className="space-y-3">
+          {suggestions.map((s, i) => (
+            <div key={i} className="border border-white/[0.06] rounded-lg p-3 space-y-1.5 hover:border-white/10 transition-colors">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-[#E8E9E8]">{s.title}</span>
+                <span
+                  className={`text-[9px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+                    s.impact === "High"
+                      ? "bg-[#C7F711]/10 text-[#C7F711]"
+                      : s.impact === "Medium"
+                      ? "bg-[#7DD3FC]/10 text-[#7DD3FC]"
+                      : "bg-[#86EFAC]/10 text-[#86EFAC]"
+                  }`}
+                >
+                  {s.impact}
+                </span>
+              </div>
+              <p className="text-[11px] text-[#E8E9E8]/45 leading-relaxed">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Score Bar ────────────────────────────────────────────────────────────────
 
 function ScoreBar({ score, max = 10, color = "#C7F711" }: { score: number; max?: number; color?: string }) {
@@ -85,6 +321,7 @@ function CanvasPanel({
   onSelectCanvas: (id: string) => void;
 }) {
   const [activeTab, setActiveTab] = useState<"overview" | "episodes" | "export">("overview");
+  const [selectedEpisodeIdx, setSelectedEpisodeIdx] = useState<number | null>(null);
 
   return (
     <motion.div
@@ -212,34 +449,63 @@ function CanvasPanel({
           )}
 
           {activeTab === "episodes" && (
-            <motion.div key="episodes" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
-              {canvas.episodes.map((ep, i) => (
-                <div key={ep.title} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 space-y-3 hover:border-white/10 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-md bg-[#C7F711]/10 flex items-center justify-center text-[10px] font-bold text-[#C7F711]">
-                        {i + 1}
-                      </div>
-                      <span className="text-sm font-medium text-[#E8E9E8]">{ep.title}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-[#E8E9E8]/30">
-                      <Clock className="w-3 h-3" />
-                      <span>{ep.duration}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div>
-                      <p className="text-[11px] text-[#E8E9E8]/35 mb-1">Cliffhanger</p>
-                      <ScoreBar score={ep.cliffhangerScore} color="#C7F711" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-[#E8E9E8]/35 mb-1">Pacing</p>
-                      <ScoreBar score={ep.pacingScore} color="#7DD3FC" />
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-[#E8E9E8]/25 pt-1 border-t border-white/5">{ep.wordCount.toLocaleString()} words</p>
-                </div>
-              ))}
+            <motion.div key="episodes" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <AnimatePresence mode="wait">
+                {selectedEpisodeIdx !== null && canvas.episodes[selectedEpisodeIdx] ? (
+                  <EpisodeDetailInPanel
+                    key={`detail-${selectedEpisodeIdx}`}
+                    ep={canvas.episodes[selectedEpisodeIdx]}
+                    idx={selectedEpisodeIdx}
+                    onBack={() => setSelectedEpisodeIdx(null)}
+                  />
+                ) : (
+                  <motion.div
+                    key="ep-list"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    className="space-y-3"
+                  >
+                    {canvas.episodes.map((ep, i) => (
+                      <button
+                        key={ep.title}
+                        onClick={() => setSelectedEpisodeIdx(i)}
+                        className="w-full text-left bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 space-y-3 hover:border-[#C7F711]/25 hover:bg-[#C7F711]/[0.03] transition-all group cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-md bg-[#C7F711]/10 flex items-center justify-center text-[10px] font-bold text-[#C7F711]">
+                              {i + 1}
+                            </div>
+                            <span className="text-sm font-medium text-[#E8E9E8]">{ep.title}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-[#E8E9E8]/30">
+                            <Clock className="w-3 h-3" />
+                            <span>{ep.duration}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-[11px] text-[#E8E9E8]/35 mb-1">Cliffhanger</p>
+                            <ScoreBar score={ep.cliffhangerScore} color="#C7F711" />
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-[#E8E9E8]/35 mb-1">Pacing</p>
+                            <ScoreBar score={ep.pacingScore} color="#7DD3FC" />
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                          <p className="text-[11px] text-[#E8E9E8]/25">{ep.wordCount.toLocaleString()} words</p>
+                          <div className="flex items-center gap-1 text-[10px] text-[#C7F711]/40 group-hover:text-[#C7F711]/70 transition-colors">
+                            <span>View details</span>
+                            <ChevronRight className="w-3 h-3" />
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
 
