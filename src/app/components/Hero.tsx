@@ -223,7 +223,7 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <Link to="/dashboard">
+          <Link to="/signup">
             <motion.button
               className="relative px-10 py-4 rounded-xl font-semibold text-lg text-[#0E1921] overflow-hidden group"
               style={{

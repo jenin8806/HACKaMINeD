@@ -19,7 +19,7 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, isAuthenticated, logout } = useUser();
 
   useEffect(() => {
     const unsubscribe = scrollY.on("change", (latest) => {
@@ -87,42 +87,59 @@ export function Navbar() {
               <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[#C7F711] group-hover:w-full transition-all duration-300" />
             </a>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="relative w-10 h-10 rounded-full border border-[#C7F711]/30 hover:border-[#C7F711] overflow-hidden focus:outline-none focus:ring-2 focus:ring-[#C7F711] transition-all duration-300">
-                  <Avatar className="w-full h-full">
-                    <AvatarImage src={user.profilePic} alt={user.username} className="object-cover" />
-                    <AvatarFallback className="bg-[#0E1921] text-[#C7F711]">
-                      {user.username.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 bg-[#0E1921] border border-[#C7F711]/20 text-[#E8E9E8]" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.username}</p>
-                    <p className="text-xs leading-none text-muted-foreground text-[#E8E9E8]/60">
-                      {user.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-[#C7F711]/10" />
-                <DropdownMenuItem className="cursor-pointer hover:bg-[#C7F711]/10 focus:bg-[#C7F711]/10 focus:text-[#C7F711]" onClick={() => navigate('/dashboard')}>
-                  <UserIcon className="mr-2 h-4 w-4" />
-                  <span>Dashboard</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer hover:bg-[#C7F711]/10 focus:bg-[#C7F711]/10 focus:text-[#C7F711]" onClick={() => setSettingsOpen(true)}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-[#C7F711]/10" />
-                <DropdownMenuItem className="cursor-pointer text-red-400 hover:bg-red-400/10 focus:bg-red-400/10 focus:text-red-400" onClick={() => navigate('/')}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="relative w-10 h-10 rounded-full border border-[#C7F711]/30 hover:border-[#C7F711] overflow-hidden focus:outline-none focus:ring-2 focus:ring-[#C7F711] transition-all duration-300">
+                    <Avatar className="w-full h-full">
+                      <AvatarImage src={user.profilePic} alt={user.username} className="object-cover" />
+                      <AvatarFallback className="bg-[#0E1921] text-[#C7F711]">
+                        {user.username.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-[#0E1921] border border-[#C7F711]/20 text-[#E8E9E8]" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.username}</p>
+                      <p className="text-xs leading-none text-muted-foreground text-[#E8E9E8]/60">
+                        {user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-[#C7F711]/10" />
+                  <DropdownMenuItem className="cursor-pointer hover:bg-[#C7F711]/10 focus:bg-[#C7F711]/10 focus:text-[#C7F711]" onClick={() => navigate('/dashboard')}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer hover:bg-[#C7F711]/10 focus:bg-[#C7F711]/10 focus:text-[#C7F711]" onClick={() => setSettingsOpen(true)}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-[#C7F711]/10" />
+                  <DropdownMenuItem className="cursor-pointer text-red-400 hover:bg-red-400/10 focus:bg-red-400/10 focus:text-red-400" onClick={() => { logout(); navigate('/'); }}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/login"
+                  className="px-4 py-2 text-sm text-[#E8E9E8]/80 hover:text-[#C7F711] transition-colors duration-300"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="px-5 py-2 rounded-xl text-sm font-semibold text-[#0E1921] bg-[#C7F711] hover:bg-[#A9F42C] transition-colors duration-300 shadow-lg shadow-[#C7F711]/20"
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
           </div>
 
           <UserSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
