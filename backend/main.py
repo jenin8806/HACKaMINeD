@@ -12,11 +12,16 @@ from pydantic import BaseModel
 # Firebase Admin is initialized in auth module
 from app.auth import get_current_uid, verify_firebase_token
 from app.db import get_user_profile, update_user_profile, upsert_user_profile
+from ai_engine.llm_response import call_llm
 
 
 class SignupBody(BaseModel):
     username: str
     email: str
+
+
+class AnalyzeBody(BaseModel):
+    story: str
 
 
 class ProfileUpdateBody(BaseModel):
@@ -96,6 +101,19 @@ async def auth_profile_update(body: ProfileUpdateBody, uid: str = Depends(get_cu
         return {"ok": True}
     update_user_profile(uid, updates)
     return {"ok": True}
+
+
+@app.post("/api/analyze")
+async def analyze_story(body: AnalyzeBody, uid: str = Depends(get_current_uid)):
+    """Send user story to LLM and return episodic breakdown."""
+    if not body.story.strip():
+        raise HTTPException(status_code=400, detail="Story text is required.")
+
+    result = call_llm(body.story)
+    if result is None:
+        raise HTTPException(status_code=502, detail="LLM service unavailable.")
+
+    return result
 
 
 @app.get("/health")

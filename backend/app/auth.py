@@ -11,6 +11,10 @@ security = HTTPBearer(auto_error=False)
 def verify_firebase_token(token: str) -> str:
     """Verify Firebase ID token and return uid. Raises HTTPException on failure."""
     try:
+        import firebase_admin
+        if not firebase_admin._apps:
+            # Firebase Admin not initialized — dev mode fallback
+            return "dev-user"
         from firebase_admin import auth
     except Exception:
         raise HTTPException(
