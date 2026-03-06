@@ -28,7 +28,7 @@ const features = [
     tag: "Segmentation",
     detail:
       "The segmentation model analyses scene density, act-break conventions, tension build-up, and natural breathing points in your narrative. Whether you're adapting a novel or splitting a feature film into a series, it proposes episode boundaries that maximise viewer suspense and feel native to the format — no manual cutting required.",
-    bg: "https://images.unsplash.com/photo-1536240478700-b869ad10e128?auto=format&fit=crop&w=800&q=60",
+    bg: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=60",
   },
   {
     icon: TrendingUp,

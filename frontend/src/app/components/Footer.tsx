@@ -4,9 +4,9 @@ import { Twitter, Linkedin, Github, Mail } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="relative bg-gradient-to-b from-[#243615] to-[#0E1921] border-t border-[#C7F711]/20">
+    <footer className="relative bg-gradient-to-b from-[#0d1520] to-[#0E1921] border-t border-[#C7F711]/10">
       {/* Glow divider */}
-      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#C7F711] to-transparent opacity-50" />
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#C7F711] to-transparent opacity-20" />
 
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
