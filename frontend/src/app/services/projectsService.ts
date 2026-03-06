@@ -32,6 +32,8 @@ export interface StoredEpisode {
     escalation: string;
     cliffhanger: string;
   };
+  retentionCurve: Array<{ segment: string; retention: number }>;
+  emotionCurve: Array<{ time: string; intensity: number }>;
 }
 
 export interface StoredProject {

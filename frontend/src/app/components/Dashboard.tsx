@@ -9,7 +9,7 @@ import {
 
 import {
   AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer,
+  Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
 import { useUser } from "../contexts/UserContext";
 import { UserSettingsDialog } from "./UserSettingsDialog";
@@ -28,6 +28,9 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+type RetentionPoint = { segment: string; retention: number };
+type EmotionPoint   = { time: string; intensity: number };
+
 type CanvasEpisode = {
   title: string;
   cliffhangerScore: number;
@@ -45,6 +48,8 @@ type CanvasEpisode = {
     escalation: string;
     cliffhanger: string;
   };
+  retentionCurve: RetentionPoint[];
+  emotionCurve: EmotionPoint[];
 };
 
 type CanvasData = {
@@ -75,6 +80,9 @@ type ChatSession = {
 // ─── Episode data helpers ────────────────────────────────────────────────────
 
 function genEmotionData(ep: CanvasEpisode, idx: number) {
+  // Use real ML/NLP emotion curve when available
+  if (ep.emotionCurve?.length) return ep.emotionCurve;
+  // Heuristic fallback for legacy data without curves
   const base = (ep.cliffhangerScore + ep.pacingScore) / 2;
   const s = idx + 1;
   return [
@@ -88,6 +96,9 @@ function genEmotionData(ep: CanvasEpisode, idx: number) {
 }
 
 function genEngagementData(ep: CanvasEpisode) {
+  // Use real ML/NLP retention curve when available
+  if (ep.retentionCurve?.length) return ep.retentionCurve;
+  // Heuristic fallback for legacy data without curves
   const base = 80 + ep.pacingScore * 1.4 + ep.cliffhangerScore * 0.6;
   return [
     { segment: "Opening",  retention: Math.min(99, Math.round(base * 0.97)) },
@@ -101,18 +112,31 @@ function genEngagementData(ep: CanvasEpisode) {
 // ─── Episode Detail In Panel ─────────────────────────────────────────────────
 
 function EpisodeDetailInPanel({ ep, idx, onBack }: { ep: CanvasEpisode; idx: number; onBack: () => void }) {
-  const emotionData = genEmotionData(ep, idx);
+  const emotionData    = genEmotionData(ep, idx);
   const engagementData = genEngagementData(ep);
+  const isMLCurve      = Boolean(ep.retentionCurve?.length);
 
   const emotionalIntensity = Math.min(9.9, parseFloat((ep.cliffhangerScore * 0.65 + ep.pacingScore * 0.35).toFixed(1)));
-  const audienceRetention = Math.round(ep.retentionScore * 100);
+  const audienceRetention  = Math.round(ep.retentionScore * 100);
 
-  const narrative = [
-    { label: "Setup",         pct: Math.max(10, 22 + idx * 2),      color: "#C7F711" },
-    { label: "Rising Action", pct: Math.max(10, 35 - idx),          color: "#7DD3FC" },
-    { label: "Climax",        pct: Math.max(10, 20 + idx * 2),      color: "#F472B6" },
-    { label: "Resolution",    pct: Math.max(10, 23 - idx * 3),      color: "#86EFAC" },
+  // Dynamic Y-axis domain from actual retention values with padding
+  const retentionValues = engagementData.map((d) => d.retention);
+  const yMin = Math.max(0,   Math.min(...retentionValues) - 6);
+  const yMax = Math.min(100, Math.max(...retentionValues) + 4);
+
+  // Narrative structure computed from real segment character lengths
+  const segDefs = [
+    { label: "Hook (0–15s)",    len: ep.segments.hook.length,        color: "#C7F711" },
+    { label: "Conflict (15–45s)", len: ep.segments.conflict.length,  color: "#7DD3FC" },
+    { label: "Twist (45–60s)",  len: ep.segments.twist.length,       color: "#F472B6" },
+    { label: "Escalation (60–75s)", len: ep.segments.escalation.length, color: "#FB923C" },
+    { label: "Cliffhanger (75–90s)", len: ep.segments.cliffhanger.length, color: "#86EFAC" },
   ];
+  const totalSegLen = segDefs.reduce((a, s) => a + s.len, 0) || 1;
+  const narrative = segDefs.map((s) => ({
+    ...s,
+    pct: Math.max(4, Math.round((s.len / totalSegLen) * 100)),
+  }));
 
   return (
     <motion.div
@@ -209,13 +233,24 @@ function EpisodeDetailInPanel({ ep, idx, onBack }: { ep: CanvasEpisode; idx: num
 
       {/* Segment Retention */}
       <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
-        <h4 className="text-[10px] font-semibold text-[#E8E9E8]/35 uppercase tracking-wider mb-3">Segment Retention</h4>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-[10px] font-semibold text-[#E8E9E8]/35 uppercase tracking-wider">Segment Retention</h4>
+          {isMLCurve ? (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#86EFAC]/10 border border-[#86EFAC]/30 text-[9px] font-semibold text-[#86EFAC] uppercase tracking-wider">
+              <Activity className="w-2.5 h-2.5" /> NLP · ML
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[9px] text-[#E8E9E8]/30 uppercase tracking-wider">
+              estimated
+            </span>
+          )}
+        </div>
         <div className="h-36">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={engagementData} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
               <XAxis dataKey="segment" stroke="rgba(232,233,232,0.20)" tick={{ fontSize: 9 }} />
-              <YAxis stroke="rgba(232,233,232,0.20)" tick={{ fontSize: 9 }} domain={[78, 100]} />
+              <YAxis stroke="rgba(232,233,232,0.20)" tick={{ fontSize: 9 }} domain={[yMin, yMax]} tickFormatter={(v) => `${v}%`} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "#0E1921",
@@ -226,12 +261,21 @@ function EpisodeDetailInPanel({ ep, idx, onBack }: { ep: CanvasEpisode; idx: num
                 }}
                 formatter={(v: number) => [`${v}%`, "Retention"]}
               />
+              {/* Overall ML retention score as a reference baseline */}
+              <ReferenceLine
+                y={audienceRetention}
+                stroke="#86EFAC"
+                strokeDasharray="4 3"
+                strokeOpacity={0.45}
+                label={{ value: `ML: ${audienceRetention}%`, position: "right", fontSize: 8, fill: "#86EFAC", opacity: 0.6 }}
+              />
               <Line
                 type="monotone"
                 dataKey="retention"
                 stroke="#7DD3FC"
                 strokeWidth={2}
                 dot={{ fill: "#7DD3FC", r: 4, stroke: "#0E1921", strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: "#7DD3FC" }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -695,6 +739,8 @@ export function Dashboard() {
               escalation: ep.segments?.escalation_60_75s || "",
               cliffhanger: ep.segments?.cliffhanger_75_90s || "",
             },
+            retentionCurve: ep.analytics?.retention_curve ?? [],
+            emotionCurve: ep.analytics?.emotion_curve ?? [],
           };
         }),
         suggestions: episodes
