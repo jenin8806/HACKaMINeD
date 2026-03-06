@@ -357,7 +357,7 @@ function CanvasPanel({
   allCanvases: CanvasData[];
   onSelectCanvas: (id: string) => void;
 }) {
-  const [activeTab, setActiveTab] = useState<"overview" | "episodes" | "export">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "episodes">("overview");
   const [selectedEpisodeIdx, setSelectedEpisodeIdx] = useState<number | null>(null);
 
   return (
@@ -407,7 +407,7 @@ function CanvasPanel({
 
       {/* Tabs */}
       <div className="flex items-center gap-1 px-4 pt-3 pb-1 flex-shrink-0">
-        {(["overview", "episodes", "export"] as const).map((tab) => (
+        {(["overview", "episodes"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -553,30 +553,6 @@ function CanvasPanel({
             </motion.div>
           )}
 
-          {activeTab === "export" && (
-            <motion.div key="export" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <div className="bg-[#040B11] border border-white/5 rounded-xl overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/5">
-                  <Code2 className="w-3.5 h-3.5 text-[#C7F711]" />
-                  <span className="text-xs text-[#E8E9E8]/40">analysis.json</span>
-                </div>
-                <pre className="p-4 font-mono text-xs text-[#E8E9E8]/60 leading-relaxed overflow-x-auto whitespace-pre-wrap">
-                  {JSON.stringify(
-                    {
-                      title: canvas.title,
-                      wordCount: canvas.wordCount,
-                      episodeCount: canvas.episodeCount,
-                      overallScore: canvas.overallScore,
-                      episodes: canvas.episodes,
-                      suggestions: canvas.suggestions,
-                    },
-                    null,
-                    2
-                  )}
-                </pre>
-              </div>
-            </motion.div>
-          )}
         </AnimatePresence>
       </div>
     </motion.div>
@@ -1010,154 +986,186 @@ export function Dashboard() {
             </div>
           )}
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/[0.1] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/[0.18]">
-            <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-12 pb-44 min-h-full flex flex-col">
-              {messages.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="my-auto flex flex-col items-center justify-center pb-16 w-full"
-                >
+          {/* Claude-style layout: centered when empty, chat layout when active */}
+          <AnimatePresence mode="wait">
+            {messages.length === 0 ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12, transition: { duration: 0.18 } }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="absolute inset-0 flex flex-col items-center justify-center px-4 overflow-y-auto"
+              >
+                <div className="w-full max-w-2xl flex flex-col items-center py-8">
                   <FilmCamera3D />
-                  <h2 className="text-2xl sm:text-3xl font-semibold text-[#E8E9E8] mb-2 tracking-tight">
+                  <h2 className="text-2xl sm:text-3xl font-semibold text-[#E8E9E8] mb-2 tracking-tight text-center">
                     Welcome back, {user.username}
                   </h2>
                   <p className="text-[#E8E9E8]/40 text-sm mb-8 max-w-sm text-center leading-relaxed">
                     Drop your script or upload a file to analyze narrative structure, pacing, and cliffhangers.
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
-                    {[
-                      "Analyze my comedy pilot episode",
-                      "Check pacing on episode 3",
-                      "Find the best cliffhanger moments",
-                      "Summarize this act structure",
-                    ].map((s, i) => (
+                  <div className="w-full">
+                    <div className="flex items-end gap-2 bg-[#1A262E] border border-white/10 rounded-3xl p-2 transition-all duration-300 focus-within:border-[#C7F711]/40 focus-within:ring-1 focus-within:ring-[#C7F711]/15 shadow-lg shadow-black/30">
+                      <label title="Upload script file" className="cursor-pointer mb-0.5 p-2.5 text-[#E8E9E8]/40 hover:text-[#C7F711] transition-colors rounded-full hover:bg-white/5 flex-shrink-0">
+                        <input type="file" accept=".txt" onChange={handleFileUpload} className="hidden" />
+                        <Plus className="w-5 h-5" />
+                      </label>
+                      <textarea
+                        ref={textareaRef}
+                        value={scriptText}
+                        onChange={(e) => setScriptText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleAnalyze();
+                          }
+                        }}
+                        placeholder="Message TheVbox AI..."
+                        className="flex-1 max-h-[200px] mb-1 py-2.5 px-2 bg-transparent text-[#E8E9E8] placeholder:text-[#E8E9E8]/30 focus:outline-none resize-none text-[15px] leading-relaxed"
+                        rows={1}
+                      />
                       <button
-                        key={i}
-                        onClick={() => setScriptText(s)}
-                        className="px-4 py-3 rounded-xl border border-white/5 bg-white/[0.02] text-[#E8E9E8]/55 text-sm hover:bg-white/[0.05] hover:text-[#E8E9E8] hover:border-white/10 transition-all text-left"
+                        onClick={handleAnalyze}
+                        disabled={!scriptText.trim() || isAnalyzing}
+                        className="mb-1 p-2 bg-[#E8E9E8] text-[#0E1921] rounded-full hover:bg-[#C7F711] disabled:opacity-20 disabled:cursor-not-allowed transition-all flex-shrink-0"
                       >
-                        {s}
+                        <ArrowUp className="w-5 h-5" />
                       </button>
-                    ))}
+                    </div>
+                    <p className="text-center mt-2.5 text-[10px] text-[#E8E9E8]/20">
+                      AI can make mistakes. Consider verifying important information.
+                    </p>
                   </div>
-                </motion.div>
-              ) : (
-                <div className="space-y-5 flex-1 pt-6">
-                  {messages.map((message) => (
-                    <motion.div
-                      key={message.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className={`flex w-full ${message.type === "user" ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[88%] p-4 rounded-2xl ${
-                          message.type === "user"
-                            ? "bg-[#1E2E38] border border-white/5 text-[#E8E9E8]"
-                            : "text-[#E8E9E8]"
-                        }`}
-                      >
-                        {message.type === "ai" && (
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="w-6 h-6 rounded-md bg-[#C7F711]/10 flex items-center justify-center">
-                              <Sparkles className="w-3.5 h-3.5 text-[#C7F711]" />
-                            </div>
-                            <span className="text-sm font-semibold text-[#E8E9E8]">TheVbox AI</span>
-                          </div>
-                        )}
-                        {message.type === "user" ? (
-                          <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{message.content}</p>
-                        ) : (
-                          <div className="text-[15px] leading-relaxed space-y-1">
-                            {message.content.split("\n").map((line, i) =>
-                              line.includes("**") ? (
-                                <p key={i} className="font-semibold text-[#D4DDE0]">{line.replace(/\*\*/g, "")}</p>
-                              ) : line === "" ? (
-                                <div key={i} className="h-1" />
-                              ) : (
-                                <p key={i} className="text-[#8FA3A8]">{line}</p>
-                              )
-                            )}
-                          </div>
-                        )}
-                        {/* Canvas chip */}
-                        {message.canvasId && (
-                          <button
-                            onClick={() =>
-                              setActiveCanvasId(activeCanvasId === message.canvasId ? null : message.canvasId!)
-                            }
-                            className={`mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
-                              activeCanvasId === message.canvasId
-                                ? "bg-[#C7F711]/10 text-[#C7F711] border-[#C7F711]/20"
-                                : "bg-white/5 text-[#E8E9E8]/55 border-white/5 hover:bg-white/10 hover:text-[#E8E9E8]"
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="chat"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.25 }}
+                className="absolute inset-0 flex flex-col"
+              >
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/[0.1] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/[0.18]">
+                  <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-12 pb-44 min-h-full flex flex-col">
+                    <div className="space-y-5 flex-1 pt-6">
+                      {messages.map((message) => (
+                        <motion.div
+                          key={message.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className={`flex w-full ${message.type === "user" ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[88%] p-4 rounded-2xl ${
+                              message.type === "user"
+                                ? "bg-[#1E2E38] border border-white/5 text-[#E8E9E8]"
+                                : "text-[#E8E9E8]"
                             }`}
                           >
-                            <BarChart2 className="w-3.5 h-3.5" />
-                            {activeCanvasId === message.canvasId ? "Canvas open" : "Open canvas →"}
-                          </button>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
+                            {message.type === "ai" && (
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-6 h-6 rounded-md bg-[#C7F711]/10 flex items-center justify-center">
+                                  <Sparkles className="w-3.5 h-3.5 text-[#C7F711]" />
+                                </div>
+                                <span className="text-sm font-semibold text-[#E8E9E8]">TheVbox AI</span>
+                              </div>
+                            )}
+                            {message.type === "user" ? (
+                              <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{message.content}</p>
+                            ) : (
+                              <div className="text-[15px] leading-relaxed space-y-1">
+                                {message.content.split("\n").map((line, i) =>
+                                  line.includes("**") ? (
+                                    <p key={i} className="font-semibold text-[#D4DDE0]">{line.replace(/\*\*/g, "")}</p>
+                                  ) : line === "" ? (
+                                    <div key={i} className="h-1" />
+                                  ) : (
+                                    <p key={i} className="text-[#8FA3A8]">{line}</p>
+                                  )
+                                )}
+                              </div>
+                            )}
+                            {/* Canvas chip */}
+                            {message.canvasId && (
+                              <button
+                                onClick={() =>
+                                  setActiveCanvasId(activeCanvasId === message.canvasId ? null : message.canvasId!)
+                                }
+                                className={`mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                                  activeCanvasId === message.canvasId
+                                    ? "bg-[#C7F711]/10 text-[#C7F711] border-[#C7F711]/20"
+                                    : "bg-white/5 text-[#E8E9E8]/55 border-white/5 hover:bg-white/10 hover:text-[#E8E9E8]"
+                                }`}
+                              >
+                                <BarChart2 className="w-3.5 h-3.5" />
+                                {activeCanvasId === message.canvasId ? "Canvas open" : "Open canvas →"}
+                              </button>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
 
-                  {isAnalyzing && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
-                      <div className="p-4 flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-md bg-[#C7F711]/10 flex items-center justify-center">
-                          <Sparkles className="w-3.5 h-3.5 text-[#C7F711] animate-spin" style={{ animationDuration: "3s" }} />
-                        </div>
-                        <div className="flex gap-1.5">
-                          {[0, 0.2, 0.4].map((delay, i) => (
-                            <motion.div key={i} className="w-1.5 h-1.5 rounded-full bg-[#C7F711]" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay }} />
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                  <div ref={messagesEndRef} />
+                      {isAnalyzing && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
+                          <div className="p-4 flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-md bg-[#C7F711]/10 flex items-center justify-center">
+                              <Sparkles className="w-3.5 h-3.5 text-[#C7F711] animate-spin" style={{ animationDuration: "3s" }} />
+                            </div>
+                            <div className="flex gap-1.5">
+                              {[0, 0.2, 0.4].map((delay, i) => (
+                                <motion.div key={i} className="w-1.5 h-1.5 rounded-full bg-[#C7F711]" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay }} />
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Input (pinned bottom) */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0E1921] via-[#0E1921]/95 to-transparent pt-10 pb-6">
-            <div className="max-w-2xl mx-auto px-4">
-              <div className="flex items-end gap-2 bg-[#1A262E] border border-white/10 rounded-3xl p-2 transition-all duration-300 focus-within:border-[#C7F711]/40 focus-within:ring-1 focus-within:ring-[#C7F711]/15 shadow-lg shadow-black/30">
-                <label title="Upload script file" className="cursor-pointer mb-0.5 p-2.5 text-[#E8E9E8]/40 hover:text-[#C7F711] transition-colors rounded-full hover:bg-white/5 flex-shrink-0">
-                  <input type="file" accept=".txt" onChange={handleFileUpload} className="hidden" />
-                  <Plus className="w-5 h-5" />
-                </label>
-                <textarea
-                  ref={textareaRef}
-                  value={scriptText}
-                  onChange={(e) => setScriptText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleAnalyze();
-                    }
-                  }}
-                  placeholder="Message TheVbox AI..."
-                  className="flex-1 max-h-[200px] mb-1 py-2.5 px-2 bg-transparent text-[#E8E9E8] placeholder:text-[#E8E9E8]/30 focus:outline-none resize-none text-[15px] leading-relaxed"
-                  rows={1}
-                />
-                <button
-                  onClick={handleAnalyze}
-                  disabled={!scriptText.trim() || isAnalyzing}
-                  className="mb-1 p-2 bg-[#E8E9E8] text-[#0E1921] rounded-full hover:bg-[#C7F711] disabled:opacity-20 disabled:cursor-not-allowed transition-all flex-shrink-0"
-                >
-                  <ArrowUp className="w-5 h-5" />
-                </button>
-              </div>
-              <p className="text-center mt-2.5 text-[10px] text-[#E8E9E8]/20">
-                AI can make mistakes. Consider verifying important information.
-              </p>
-            </div>
-          </div>
+                {/* Input (pinned bottom) */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0E1921] via-[#0E1921]/95 to-transparent pt-10 pb-6">
+                  <div className="max-w-2xl mx-auto px-4">
+                    <div className="flex items-end gap-2 bg-[#1A262E] border border-white/10 rounded-3xl p-2 transition-all duration-300 focus-within:border-[#C7F711]/40 focus-within:ring-1 focus-within:ring-[#C7F711]/15 shadow-lg shadow-black/30">
+                      <label title="Upload script file" className="cursor-pointer mb-0.5 p-2.5 text-[#E8E9E8]/40 hover:text-[#C7F711] transition-colors rounded-full hover:bg-white/5 flex-shrink-0">
+                        <input type="file" accept=".txt" onChange={handleFileUpload} className="hidden" />
+                        <Plus className="w-5 h-5" />
+                      </label>
+                      <textarea
+                        ref={textareaRef}
+                        value={scriptText}
+                        onChange={(e) => setScriptText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleAnalyze();
+                          }
+                        }}
+                        placeholder="Message TheVbox AI..."
+                        className="flex-1 max-h-[200px] mb-1 py-2.5 px-2 bg-transparent text-[#E8E9E8] placeholder:text-[#E8E9E8]/30 focus:outline-none resize-none text-[15px] leading-relaxed"
+                        rows={1}
+                      />
+                      <button
+                        onClick={handleAnalyze}
+                        disabled={!scriptText.trim() || isAnalyzing}
+                        className="mb-1 p-2 bg-[#E8E9E8] text-[#0E1921] rounded-full hover:bg-[#C7F711] disabled:opacity-20 disabled:cursor-not-allowed transition-all flex-shrink-0"
+                      >
+                        <ArrowUp className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <p className="text-center mt-2.5 text-[10px] text-[#E8E9E8]/20">
+                      AI can make mistakes. Consider verifying important information.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* ── Canvas Panel ── */}

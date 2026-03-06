@@ -49,7 +49,7 @@ function EpisodeCard({ ep, idx }: { ep: StoredEpisode; idx: number }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: idx * 0.07 }}
-      className="rounded-2xl bg-[#314A52]/50 backdrop-blur-sm border border-[#C7F711]/20 hover:border-[#C7F711]/40 transition-all duration-300 overflow-hidden"
+      className="rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300 overflow-hidden"
     >
       {/* ── Card Header ── */}
       <button
