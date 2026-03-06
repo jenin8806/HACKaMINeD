@@ -76,6 +76,7 @@ export function Features() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.1 });
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const expandedFeature = expandedIndex !== null ? features[expandedIndex] : null;
 
   return (
     <section
@@ -126,126 +127,136 @@ export function Features() {
           </p>
         </motion.div>
 
-        {/* Fixed backdrop when a card is flipped */}
-        <AnimatePresence>
-          {expandedIndex !== null && (
-            <motion.div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-              style={{ zIndex: 40 }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              onClick={() => setExpandedIndex(null)}
-            />
-          )}
-        </AnimatePresence>
-
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => {
-            const isFlipped = expandedIndex === index;
-            return (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="relative min-h-[280px]"
-                style={{ perspective: "1200px", zIndex: isFlipped ? 50 : 10 }}
+          {features.map((feature, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 30 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              className="relative min-h-[280px] cursor-pointer group"
+              onClick={() => setExpandedIndex(index)}
+            >
+              <div
+                className="absolute inset-0 p-7 rounded-2xl border border-[#C7F711]/15 overflow-hidden flex flex-col transition-colors duration-300 hover:border-[#C7F711]/35"
+                style={{ background: "rgba(49, 74, 82, 0.35)" }}
               >
-                {/* 3D flip inner */}
-                <motion.div
-                  className="absolute inset-0 cursor-pointer"
-                  style={{ transformStyle: "preserve-3d" }}
-                  animate={{ rotateY: isFlipped ? 180 : 0 }}
-                  transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-                  onClick={() => setExpandedIndex(isFlipped ? null : index)}
-                >
-                  {/* ── Front face ── */}
+                {/* Themed context bg — slides up from bottom on hover */}
+                <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none translate-y-full group-hover:translate-y-0 transition-transform duration-700 ease-out">
                   <div
-                    className="absolute inset-0 p-7 rounded-2xl border border-[#C7F711]/15 overflow-hidden group flex flex-col"
+                    className="absolute inset-0"
                     style={{
-                      background: "rgba(49, 74, 82, 0.35)",
-                      backfaceVisibility: "hidden",
-                      WebkitBackfaceVisibility: "hidden",
+                      backgroundImage: `url(${feature.bg})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
                     }}
+                  />
+                  <div
+                    className="absolute inset-0"
+                    style={{ background: "linear-gradient(135deg, rgba(14,25,33,0.80) 0%, rgba(14,25,33,0.60) 100%)" }}
+                  />
+                </div>
+                <div className="relative z-10 flex items-start justify-between mb-5">
+                  <div
+                    className="p-3 rounded-xl border border-[#C7F711]/20"
+                    style={{ background: "rgba(199, 247, 17, 0.1)" }}
                   >
-                    {/* Themed context bg — slides up from bottom on hover */}
-                    <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none translate-y-full group-hover:translate-y-0 transition-transform duration-700 ease-out">
-                      <div
-                        className="absolute inset-0"
-                        style={{
-                          backgroundImage: `url(${feature.bg})`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                        }}
-                      />
-                      <div
-                        className="absolute inset-0"
-                        style={{ background: "linear-gradient(135deg, rgba(14,25,33,0.80) 0%, rgba(14,25,33,0.60) 100%)" }}
-                      />
-                    </div>
-                    <div className="relative z-10 flex items-start justify-between mb-5">
-                      <div
-                        className="p-3 rounded-xl border border-[#C7F711]/20"
-                        style={{ background: "rgba(199, 247, 17, 0.1)" }}
-                      >
-                        <feature.icon className="w-6 h-6 text-[#C7F711]" />
-                      </div>
-                      <span className="px-3 py-1 rounded-full text-xs text-[#C7F711]/70 border border-[#C7F711]/20 bg-[#C7F711]/5">
-                        {feature.tag}
-                      </span>
-                    </div>
-                    <div className="relative z-10 flex-1">
-                      <h3 className="text-xl font-bold text-[#E8E9E8] mb-3">{feature.title}</h3>
-                      <p className="text-[#E8E9E8]/60 leading-relaxed text-sm">{feature.description}</p>
-                    </div>
-                    <p className="relative z-10 mt-4 text-[10px] text-[#C7F711]/30 tracking-widest text-right">click to explore →</p>
-                    <motion.div
-                      className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-[#C7F711] to-[#A9F42C] rounded-full"
-                      initial={{ width: 0 }}
-                      whileHover={{ width: "100%" }}
-                      transition={{ duration: 0.3 }}
-                    />
+                    <feature.icon className="w-6 h-6 text-[#C7F711]" />
                   </div>
+                  <span className="px-3 py-1 rounded-full text-xs text-[#C7F711]/70 border border-[#C7F711]/20 bg-[#C7F711]/5">
+                    {feature.tag}
+                  </span>
+                </div>
+                <div className="relative z-10 flex-1">
+                  <h3 className="text-xl font-bold text-[#E8E9E8] mb-3">{feature.title}</h3>
+                  <p className="text-[#E8E9E8]/60 leading-relaxed text-sm">{feature.description}</p>
+                </div>
+                <p className="relative z-10 mt-4 text-[10px] text-[#C7F711]/30 tracking-widest text-right">click to explore →</p>
+                <motion.div
+                  className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-[#C7F711] to-[#A9F42C] rounded-full"
+                  initial={{ width: 0 }}
+                  whileHover={{ width: "100%" }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
 
-                  {/* ── Back face ── */}
-                  <div
-                    className="absolute inset-0 p-7 rounded-2xl border border-[#C7F711]/40 flex flex-col"
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      background: "rgba(10, 21, 32, 0.97)",
-                      backfaceVisibility: "hidden",
-                      WebkitBackfaceVisibility: "hidden",
-                      transform: "rotateY(180deg)",
-                      boxShadow: "0 0 40px rgba(199,247,17,0.12), 0 24px 60px rgba(0,0,0,0.6)",
-                    }}
-                  >
-                    <div className="flex items-center gap-3 mb-4 flex-shrink-0">
+      {/* Centered modal + backdrop — outside grid so z-index/scroll work perfectly */}
+      <AnimatePresence>
+        {expandedFeature && (() => {
+          const Icon = expandedFeature.icon;
+          return (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                style={{ zIndex: 9998 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22 }}
+                onClick={() => setExpandedIndex(null)}
+              />
+              {/* Modal */}
+              <motion.div
+                key="detail-modal"
+                className="fixed inset-0 flex items-center justify-center p-6"
+                style={{ zIndex: 9999 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22 }}
+              >
+                <motion.div
+                  className="w-full max-w-lg rounded-2xl border border-[#C7F711]/40 flex flex-col"
+                  style={{
+                    background: "rgba(10, 21, 32, 0.98)",
+                    boxShadow: "0 0 40px rgba(199,247,17,0.10), 0 24px 60px rgba(0,0,0,0.7)",
+                    maxHeight: "80vh",
+                  }}
+                  initial={{ scale: 0.93, y: 20 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.93, y: 20 }}
+                  transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Header */}
+                  <div className="p-7 pb-0 flex-shrink-0">
+                    <div className="flex items-center gap-3 mb-4">
                       <div
                         className="p-2.5 rounded-xl border border-[#C7F711]/30 flex-shrink-0"
                         style={{ background: "rgba(199, 247, 17, 0.12)" }}
                       >
-                        <feature.icon className="w-5 h-5 text-[#C7F711]" />
+                        <Icon className="w-5 h-5 text-[#C7F711]" />
                       </div>
                       <div>
-                        <p className="text-[10px] text-[#C7F711] tracking-widest uppercase">{feature.tag}</p>
-                        <h3 className="text-base font-bold text-[#E8E9E8] leading-tight">{feature.title}</h3>
+                        <p className="text-[10px] text-[#C7F711] tracking-widest uppercase">{expandedFeature.tag}</p>
+                        <h3 className="text-base font-bold text-[#E8E9E8] leading-tight">{expandedFeature.title}</h3>
                       </div>
                     </div>
-                    <div className="h-px bg-[#C7F711]/15 mb-4 flex-shrink-0" />
-                    <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-[#C7F711]/20 scrollbar-track-transparent">
-                      <p className="text-[#E8E9E8]/80 leading-relaxed text-sm">{feature.detail}</p>
-                    </div>
-                    <p className="mt-4 flex-shrink-0 text-[10px] text-[#C7F711]/30 tracking-widest text-right">← click to close</p>
+                    <div className="h-px bg-[#C7F711]/15" />
+                  </div>
+                  {/* Scrollable body */}
+                  <div className="overflow-y-auto flex-1 px-7 py-5">
+                    <p className="text-[#E8E9E8]/80 leading-relaxed text-sm">{expandedFeature.detail}</p>
+                  </div>
+                  {/* Footer */}
+                  <div className="px-7 pb-6 pt-2 flex-shrink-0 border-t border-white/[0.05]">
+                    <p
+                      className="text-[10px] text-[#C7F711]/30 hover:text-[#C7F711]/60 tracking-widest text-right cursor-pointer transition-colors"
+                      onClick={() => setExpandedIndex(null)}
+                    >← click to close</p>
                   </div>
                 </motion.div>
               </motion.div>
-            );
-          })}
-        </div>
-      </div>
+            </>
+          );
+        })()}
+      </AnimatePresence>
     </section>
   );
 }

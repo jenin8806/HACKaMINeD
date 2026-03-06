@@ -757,6 +757,7 @@ export function Dashboard() {
                     <Zap className="w-4 h-4" />
                   </div>
                   <span className="text-sm font-medium">New Chat</span>
+                  <Plus className="w-4 h-4 ml-auto text-[#E8E9E8]/30 group-hover:text-[#C7F711] transition-colors" />
                 </button>
               </div>
 

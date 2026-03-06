@@ -73,7 +73,7 @@ export function EpisodeAnalytics({ episode, onClose }: Props) {
 
         {/* Modal */}
         <motion.div
-          className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-[#314A52]/80 backdrop-blur-xl rounded-3xl border-2 border-[#C7F711]/30 shadow-2xl shadow-[#C7F711]/20"
+          className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-[#0E1921] backdrop-blur-xl rounded-3xl border border-white/[0.10] shadow-2xl shadow-black/50"
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.9, y: 20 }}
@@ -107,11 +107,11 @@ export function EpisodeAnalytics({ episode, onClose }: Props) {
             {/* Scores Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <motion.div
-                className="p-6 rounded-2xl bg-[#0E1921]/50 border border-[#C7F711]/20"
+                className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06]"
                 whileHover={{ scale: 1.03 }}
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 rounded-lg bg-[#C7F711]/20">
+                  <div className="p-2 rounded-lg bg-[#C7F711]/15">
                     <Zap className="w-5 h-5 text-[#C7F711]" />
                   </div>
                   <h3 className="font-semibold text-[#E8E9E8]">Cliffhanger Score</h3>
@@ -121,11 +121,11 @@ export function EpisodeAnalytics({ episode, onClose }: Props) {
               </motion.div>
 
               <motion.div
-                className="p-6 rounded-2xl bg-[#0E1921]/50 border border-[#C7F711]/20"
+                className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06]"
                 whileHover={{ scale: 1.03 }}
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 rounded-lg bg-[#C7F711]/20">
+                  <div className="p-2 rounded-lg bg-[#C7F711]/15">
                     <TrendingUp className="w-5 h-5 text-[#C7F711]" />
                   </div>
                   <h3 className="font-semibold text-[#E8E9E8]">Emotional Intensity</h3>
@@ -135,11 +135,11 @@ export function EpisodeAnalytics({ episode, onClose }: Props) {
               </motion.div>
 
               <motion.div
-                className="p-6 rounded-2xl bg-[#0E1921]/50 border border-[#C7F711]/20"
+                className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06]"
                 whileHover={{ scale: 1.03 }}
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 rounded-lg bg-[#C7F711]/20">
+                  <div className="p-2 rounded-lg bg-[#C7F711]/15">
                     <CheckCircle className="w-5 h-5 text-[#C7F711]" />
                   </div>
                   <h3 className="font-semibold text-[#E8E9E8]">Retention</h3>
@@ -152,7 +152,7 @@ export function EpisodeAnalytics({ episode, onClose }: Props) {
             {/* Emotion Curve Graph */}
             <div className="mb-8">
               <h3 className="text-xl font-bold text-[#E8E9E8] mb-4">Emotion Curve</h3>
-              <div className="p-6 rounded-2xl bg-[#0E1921]/50 border border-[#C7F711]/20">
+              <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06]">
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={emotionCurveData}>
@@ -175,8 +175,8 @@ export function EpisodeAnalytics({ episode, onClose }: Props) {
                       />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: "#314A52",
-                          border: "1px solid rgba(199, 247, 17, 0.3)",
+                          backgroundColor: "#0E1921",
+                          border: "1px solid rgba(255,255,255,0.08)",
                           borderRadius: "12px",
                           color: "#E8E9E8",
                         }}
@@ -198,7 +198,7 @@ export function EpisodeAnalytics({ episode, onClose }: Props) {
             {/* Engagement Prediction */}
             <div className="mb-8">
               <h3 className="text-xl font-bold text-[#E8E9E8] mb-4">Engagement Prediction</h3>
-              <div className="p-6 rounded-2xl bg-[#0E1921]/50 border border-[#C7F711]/20">
+              <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06]">
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={engagementData}>
@@ -215,8 +215,8 @@ export function EpisodeAnalytics({ episode, onClose }: Props) {
                       />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: "#314A52",
-                          border: "1px solid rgba(199, 247, 17, 0.3)",
+                          backgroundColor: "#0E1921",
+                          border: "1px solid rgba(255,255,255,0.08)",
                           borderRadius: "12px",
                           color: "#E8E9E8",
                         }}
@@ -250,7 +250,7 @@ export function EpisodeAnalytics({ episode, onClose }: Props) {
                 {suggestions.map((suggestion, index) => (
                   <motion.div
                     key={index}
-                    className="p-6 rounded-2xl bg-[#0E1921]/50 border border-[#C7F711]/20 hover:border-[#C7F711]/50 transition-all duration-300 group"
+                    className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300 group"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}

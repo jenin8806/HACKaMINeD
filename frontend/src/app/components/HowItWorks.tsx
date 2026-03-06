@@ -44,10 +44,11 @@ export function HowItWorks() {
     <section
       id="how-it-works"
       ref={ref}
-      className="relative py-24 lg:py-32 bg-[#0E1921] overflow-hidden"
+      className="relative py-24 lg:py-32 overflow-hidden"
+      style={{ background: "linear-gradient(180deg, #080d11 0%, #060b0f 100%)" }}
     >
       {/* Background Grid — base dim layer */}
-      <div className="absolute inset-0 pointer-events-none" style={{ opacity: 0.15 }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ opacity: 0.07 }}>
         <div
           className="absolute inset-0"
           style={{

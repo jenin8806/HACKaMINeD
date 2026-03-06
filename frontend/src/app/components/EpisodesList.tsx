@@ -81,9 +81,9 @@ export function EpisodesList() {
   const [selectedEpisode, setSelectedEpisode] = useState<number | null>(null);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0E1921] via-[#0E1921] to-[#243615]">
+    <div className="min-h-screen" style={{ background: "linear-gradient(180deg, #0E1921 0%, #0d1520 100%)" }}>
       {/* Header */}
-      <div className="bg-[#0E1921]/50 backdrop-blur-sm border-b border-[#C7F711]/20 px-6 py-6">
+      <div className="bg-[#0E1921]/80 backdrop-blur-sm border-b border-white/[0.06] px-6 py-6">
         <div className="max-w-7xl mx-auto">
           <Link
             to={`/project/${id}`}
@@ -99,113 +99,69 @@ export function EpisodesList() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-5xl mx-auto px-6 py-10">
         {/* Episodes List */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {mockEpisodes.map((episode, index) => (
             <motion.div
               key={episode.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: index * 0.08 }}
             >
               <motion.div
-                className="relative p-6 rounded-2xl bg-[#314A52]/50 backdrop-blur-sm border border-[#C7F711]/20 hover:border-[#C7F711]/50 transition-all duration-300 group cursor-pointer"
-                whileHover={{ scale: 1.01, x: 5 }}
+                className="relative px-6 py-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300 group cursor-pointer"
+                whileHover={{ x: 4 }}
                 onClick={() => setSelectedEpisode(episode.id)}
               >
-                {/* Glow effect on hover */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#C7F711]/0 to-[#C7F711]/0 group-hover:from-[#C7F711]/10 group-hover:to-[#A9F42C]/10 transition-all duration-300" />
+                <div className="absolute inset-0 rounded-2xl bg-white/0 group-hover:bg-white/[0.02] transition-all duration-300" />
 
-                <div className="relative z-10">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                    {/* Left - Episode Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="w-16 h-16 rounded-xl bg-[#C7F711]/20 border border-[#C7F711]/50 flex items-center justify-center">
-                          <span className="text-2xl font-bold text-[#C7F711]">
-                            {episode.episodeNumber}
-                          </span>
-                        </div>
-                        <div>
-                          <h3 className="text-2xl font-bold text-[#E8E9E8] group-hover:text-[#C7F711] transition-colors">
-                            {episode.title}
-                          </h3>
-                          <div className="flex items-center gap-4 text-[#E8E9E8]/60 text-sm mt-1">
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              <span>{episode.duration}</span>
-                            </div>
-                            <span>•</span>
-                            <span>Episode {episode.episodeNumber}</span>
-                          </div>
-                        </div>
+                <div className="relative z-10 flex items-center gap-5">
+                  {/* Episode number */}
+                  <div className="w-11 h-11 rounded-xl bg-[#C7F711]/15 border border-[#C7F711]/40 flex items-center justify-center flex-shrink-0">
+                    <span className="text-base font-bold text-[#C7F711]">{episode.episodeNumber}</span>
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="text-base font-semibold text-[#E8E9E8] group-hover:text-[#C7F711] transition-colors truncate">
+                        {episode.title}
+                      </h3>
+                      <div className="flex items-center gap-1.5 text-[#E8E9E8]/40 text-xs flex-shrink-0">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{episode.duration}</span>
+                        <span className="text-[#E8E9E8]/20">·</span>
+                        <span>Episode {episode.episodeNumber}</span>
                       </div>
-                      <p className="text-[#E8E9E8]/70 leading-relaxed ml-20">
-                        {episode.summary}
-                      </p>
                     </div>
-
-                    {/* Right - Scores */}
-                    <div className="flex lg:flex-col gap-4 lg:items-end">
-                      {/* Cliffhanger Score */}
-                      <div className="text-center">
-                        <div className={`text-sm text-[#E8E9E8]/60 mb-1`}>
-                          Cliffhanger
-                        </div>
-                        <motion.div
-                          className={`px-4 py-2 rounded-xl border ${getScoreBgColor(
-                            episode.cliffhangerScore
-                          )}`}
-                          whileHover={{ scale: 1.1 }}
-                        >
-                          <div className="flex items-center gap-1">
-                            <Zap className={`w-4 h-4 ${getScoreColor(episode.cliffhangerScore)}`} />
-                            <span
-                              className={`text-lg font-bold ${getScoreColor(
-                                episode.cliffhangerScore
-                              )}`}
-                            >
-                              {episode.cliffhangerScore}
-                            </span>
-                          </div>
-                        </motion.div>
-                      </div>
-
-                      {/* Emotional Intensity */}
-                      <div className="text-center">
-                        <div className="text-sm text-[#E8E9E8]/60 mb-1">
-                          Intensity
-                        </div>
-                        <motion.div
-                          className={`px-4 py-2 rounded-xl border ${getScoreBgColor(
-                            episode.emotionalIntensity
-                          )}`}
-                          whileHover={{ scale: 1.1 }}
-                        >
-                          <div className="flex items-center gap-1">
-                            <TrendingUp className={`w-4 h-4 ${getScoreColor(episode.emotionalIntensity)}`} />
-                            <span
-                              className={`text-lg font-bold ${getScoreColor(
-                                episode.emotionalIntensity
-                              )}`}
-                            >
-                              {episode.emotionalIntensity}
-                            </span>
-                          </div>
-                        </motion.div>
-                      </div>
+                    <p className="text-[#E8E9E8]/55 text-sm leading-relaxed line-clamp-2">
+                      {episode.summary}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-[#E8E9E8]/40 text-xs">Predicted Engagement:</span>
+                      <span className="text-[#C7F711] text-xs font-semibold">{episode.engagement}</span>
                     </div>
                   </div>
 
-                  {/* Bottom - Engagement */}
-                  <div className="mt-6 pt-4 border-t border-[#C7F711]/10 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="text-[#E8E9E8]/60 text-sm">Predicted Engagement:</div>
-                      <div className="text-[#C7F711] font-semibold">{episode.engagement}</div>
+                  {/* Scores */}
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <div className="text-center">
+                      <div className="text-[11px] text-[#E8E9E8]/40 mb-1.5">Cliffhanger</div>
+                      <div className={`px-3.5 py-1.5 rounded-xl border ${getScoreBgColor(episode.cliffhangerScore)} flex items-center gap-1.5`}>
+                        <Zap className={`w-3.5 h-3.5 ${getScoreColor(episode.cliffhangerScore)}`} />
+                        <span className={`text-base font-bold ${getScoreColor(episode.cliffhangerScore)}`}>{episode.cliffhangerScore}</span>
+                      </div>
                     </div>
-                    <span className="text-[#C7F711] text-sm font-semibold group-hover:translate-x-1 transition-transform">
-                      View Analytics →
+                    <div className="text-center">
+                      <div className="text-[11px] text-[#E8E9E8]/40 mb-1.5">Intensity</div>
+                      <div className={`px-3.5 py-1.5 rounded-xl border ${getScoreBgColor(episode.emotionalIntensity)} flex items-center gap-1.5`}>
+                        <TrendingUp className={`w-3.5 h-3.5 ${getScoreColor(episode.emotionalIntensity)}`} />
+                        <span className={`text-base font-bold ${getScoreColor(episode.emotionalIntensity)}`}>{episode.emotionalIntensity}</span>
+                      </div>
+                    </div>
+                    <span className="text-[#C7F711]/40 text-sm group-hover:text-[#C7F711] group-hover:translate-x-1 transition-all ml-1">
+                      →
                     </span>
                   </div>
                 </div>

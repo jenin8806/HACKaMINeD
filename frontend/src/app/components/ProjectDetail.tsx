@@ -28,9 +28,9 @@ export function ProjectDetail() {
   const { id } = useParams();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0E1921] via-[#0E1921] to-[#243615]">
+    <div className="min-h-screen" style={{ background: "linear-gradient(180deg, #0E1921 0%, #0d1520 100%)" }}>
       {/* Header */}
-      <div className="bg-[#0E1921]/50 backdrop-blur-sm border-b border-[#C7F711]/20 px-6 py-6">
+      <div className="bg-[#0E1921]/80 backdrop-blur-sm border-b border-white/[0.06] px-6 py-6">
         <div className="max-w-7xl mx-auto">
           <Link
             to="/projects"
@@ -69,7 +69,7 @@ export function ProjectDetail() {
 
             {/* Overall Score Badge */}
             <motion.div
-              className="px-8 py-6 rounded-2xl bg-gradient-to-br from-[#C7F711]/20 to-[#A9F42C]/20 border-2 border-[#C7F711]/50 backdrop-blur-sm"
+              className="px-8 py-6 rounded-2xl bg-white/[0.03] border border-[#C7F711]/40 backdrop-blur-sm"
               whileHover={{ scale: 1.05 }}
             >
               <div className="text-center">
@@ -94,9 +94,9 @@ export function ProjectDetail() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
         >
-          <div className="p-6 rounded-2xl bg-[#314A52]/50 backdrop-blur-sm border border-[#C7F711]/20">
+          <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06]">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-[#C7F711]/20">
+              <div className="p-2 rounded-lg bg-[#C7F711]/15">
                 <TrendingUp className="w-5 h-5 text-[#C7F711]" />
               </div>
               <h3 className="font-semibold text-[#E8E9E8]">Episodes</h3>
@@ -105,9 +105,9 @@ export function ProjectDetail() {
             <p className="text-sm text-[#E8E9E8]/60 mt-1">Total segments</p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-[#314A52]/50 backdrop-blur-sm border border-[#C7F711]/20">
+          <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06]">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-[#C7F711]/20">
+              <div className="p-2 rounded-lg bg-[#C7F711]/15">
                 <Zap className="w-5 h-5 text-[#C7F711]" />
               </div>
               <h3 className="font-semibold text-[#E8E9E8]">Engagement</h3>
@@ -116,9 +116,9 @@ export function ProjectDetail() {
             <p className="text-sm text-[#E8E9E8]/60 mt-1">Predicted retention</p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-[#314A52]/50 backdrop-blur-sm border border-[#C7F711]/20">
+          <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06]">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-[#C7F711]/20">
+              <div className="p-2 rounded-lg bg-[#C7F711]/15">
                 <BarChart3 className="w-5 h-5 text-[#C7F711]" />
               </div>
               <h3 className="font-semibold text-[#E8E9E8]">Duration</h3>
@@ -135,7 +135,7 @@ export function ProjectDetail() {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mb-12"
         >
-          <div className="p-8 rounded-2xl bg-[#314A52]/50 backdrop-blur-sm border border-[#C7F711]/20">
+          <div className="p-8 rounded-2xl bg-white/[0.03] border border-white/[0.06]">
             <h2 className="text-2xl font-bold text-[#E8E9E8] mb-6">
               Emotional Intensity Curve
             </h2>
@@ -155,8 +155,8 @@ export function ProjectDetail() {
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#314A52",
-                      border: "1px solid rgba(199, 247, 17, 0.3)",
+                      backgroundColor: "#0E1921",
+                      border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: "12px",
                       color: "#E8E9E8",
                     }}
@@ -215,7 +215,7 @@ export function ProjectDetail() {
             ].map((suggestion, index) => (
               <motion.div
                 key={index}
-                className="p-6 rounded-2xl bg-[#314A52]/50 backdrop-blur-sm border border-[#C7F711]/20 hover:border-[#C7F711]/50 transition-all duration-300 group"
+                className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300 group"
                 whileHover={{ x: 5 }}
               >
                 <div className="flex items-start justify-between">
