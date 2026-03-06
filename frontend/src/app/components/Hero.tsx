@@ -88,15 +88,15 @@ export function Hero() {
       />
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center w-full max-w-5xl mx-auto px-6 lg:px-8 pt-28 pb-4">
         <motion.div
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#C7F711]/30 bg-[#010305]/50 backdrop-blur-sm mb-7"
+          // className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#C7F711]/30 bg-[#010305]/50 backdrop-blur-sm mb-7"
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#C7F711] animate-pulse" />
-          <span className="text-[10px] tracking-[0.26em] text-[#C7F711]/80 uppercase font-medium">
+          {/* <span className="w-1.5 h-1.5 rounded-full bg-[#C7F711] animate-pulse" /> */}
+          {/* <span className="text-[10px] tracking-[0.26em] text-[#C7F711]/80 uppercase font-medium">
             AI&nbsp;·&nbsp;Scripts&nbsp;·&nbsp;Episodes
-          </span>
+          </span> */}
         </motion.div>
         <motion.h1
           className="text-6xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight leading-none"
