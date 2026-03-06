@@ -32,6 +32,17 @@ type CanvasEpisode = {
   pacingScore: number;
   duration: string;
   wordCount: number;
+  retentionScore: number;
+  cliffhangerType: string;
+  emotionArc: { start: string; mid: string; end: string };
+  improvementSuggestion: string;
+  segments: {
+    hook: string;
+    conflict: string;
+    twist: string;
+    escalation: string;
+    cliffhanger: string;
+  };
 };
 
 type CanvasData = {
@@ -92,23 +103,13 @@ function EpisodeDetailInPanel({ ep, idx, onBack }: { ep: CanvasEpisode; idx: num
   const engagementData = genEngagementData(ep);
 
   const emotionalIntensity = Math.min(9.9, parseFloat((ep.cliffhangerScore * 0.65 + ep.pacingScore * 0.35).toFixed(1)));
-  const audienceRetention = Math.min(99, Math.round(80 + (ep.cliffhangerScore + ep.pacingScore) * 0.85));
+  const audienceRetention = Math.round(ep.retentionScore * 100);
 
   const narrative = [
     { label: "Setup",         pct: Math.max(10, 22 + idx * 2),      color: "#C7F711" },
     { label: "Rising Action", pct: Math.max(10, 35 - idx),          color: "#7DD3FC" },
     { label: "Climax",        pct: Math.max(10, 20 + idx * 2),      color: "#F472B6" },
     { label: "Resolution",    pct: Math.max(10, 23 - idx * 3),      color: "#86EFAC" },
-  ];
-
-  const suggestions = [
-    ep.cliffhangerScore < 8.5
-      ? { title: "Boost the Cliffhanger", desc: "The ending hook can be sharpened. Try introducing an unresolved visual surprise or question in the final 60 seconds.", impact: "High" }
-      : { title: "Cliffhanger is Excellent", desc: "Your ending hook scores very high. Maintain this momentum and consider teasing a future plot thread.", impact: "Keep" },
-    ep.pacingScore < 8.5
-      ? { title: "Tighten Pacing", desc: "Some scenes feel stretched. Cutting 10–15% of mid-section dialogue could sharpen audience engagement.", impact: "Medium" }
-      : { title: "Pacing is Solid", desc: "The episode flows naturally. Keep using scene transitions to preserve this rhythm across the series.", impact: "Keep" },
-    { title: "Expand the Emotional Arc", desc: `Emotional intensity peaks at ${ep.cliffhangerScore}/10. Adding a quiet beat before the climax would amplify the contrast and impact.`, impact: "Medium" },
   ];
 
   return (
@@ -150,7 +151,7 @@ function EpisodeDetailInPanel({ ep, idx, onBack }: { ep: CanvasEpisode; idx: num
           { label: "Cliffhanger", value: ep.cliffhangerScore, color: "#C7F711", icon: <Zap className="w-3.5 h-3.5" />, max: 10 },
           { label: "Pacing", value: ep.pacingScore, color: "#7DD3FC", icon: <TrendingUp className="w-3.5 h-3.5" />, max: 10 },
           { label: "Emotional Intensity", value: emotionalIntensity, color: "#F472B6", icon: <Activity className="w-3.5 h-3.5" />, max: 10 },
-          { label: "Audience Retention", value: `${audienceRetention}%`, color: "#86EFAC", icon: <Users className="w-3.5 h-3.5" />, max: null },
+          { label: "ML Retention Score", value: `${audienceRetention}%`, color: "#86EFAC", icon: <Users className="w-3.5 h-3.5" />, max: null },
         ].map((m) => (
           <div key={m.label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 hover:border-white/10 transition-colors">
             <div className="flex items-center gap-1 mb-2" style={{ color: m.color }}>
@@ -259,34 +260,65 @@ function EpisodeDetailInPanel({ ep, idx, onBack }: { ep: CanvasEpisode; idx: num
         </div>
       </div>
 
-      {/* AI Suggestions */}
+      {/* Script Segments */}
       <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
         <h4 className="text-[10px] font-semibold text-[#E8E9E8]/35 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <Sparkles className="w-3 h-3 text-[#C7F711]" />
-          AI Suggestions
+          <FileText className="w-3 h-3 text-[#C7F711]" />
+          Episode Script Segments
         </h4>
-        <div className="space-y-3">
-          {suggestions.map((s, i) => (
-            <div key={i} className="border border-white/[0.06] rounded-lg p-3 space-y-1.5 hover:border-white/10 transition-colors">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-[#E8E9E8]">{s.title}</span>
-                <span
-                  className={`text-[9px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${
-                    s.impact === "High"
-                      ? "bg-[#C7F711]/10 text-[#C7F711]"
-                      : s.impact === "Medium"
-                      ? "bg-[#7DD3FC]/10 text-[#7DD3FC]"
-                      : "bg-[#86EFAC]/10 text-[#86EFAC]"
-                  }`}
-                >
-                  {s.impact}
-                </span>
+        <div className="space-y-2.5">
+          {([
+            { label: "Hook (0–15s)",          text: ep.segments.hook,        color: "#C7F711" },
+            { label: "Conflict (15–45s)",      text: ep.segments.conflict,    color: "#7DD3FC" },
+            { label: "Midpoint Twist (45–60s)",text: ep.segments.twist,       color: "#F472B6" },
+            { label: "Escalation (60–75s)",    text: ep.segments.escalation,  color: "#FB923C" },
+            { label: "Cliffhanger (75–90s)",   text: ep.segments.cliffhanger, color: "#86EFAC" },
+          ] as { label: string; text: string; color: string }[]).map((seg) => (
+            <div key={seg.label} className="border border-white/[0.06] rounded-lg p-3 space-y-1.5 hover:border-white/10 transition-colors">
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: seg.color }} />
+                <span className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: seg.color + "99" }}>{seg.label}</span>
               </div>
-              <p className="text-[11px] text-[#E8E9E8]/45 leading-relaxed">{s.desc}</p>
+              <p className="text-[11px] text-[#E8E9E8]/60 leading-relaxed">{seg.text || "—"}</p>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Emotion Arc + Cliffhanger Type */}
+      {(ep.emotionArc.start || ep.cliffhangerType) && (
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
+          <h4 className="text-[10px] font-semibold text-[#E8E9E8]/35 uppercase tracking-wider mb-3">Emotion Arc &amp; Cliffhanger</h4>
+          {ep.emotionArc.start && (
+            <div className="flex items-center gap-2 mb-3">
+              {[{ label: "Start", val: ep.emotionArc.start }, { label: "Mid", val: ep.emotionArc.mid }, { label: "End", val: ep.emotionArc.end }].map((a, i) => (
+                <div key={i} className="flex-1 text-center">
+                  <div className="text-[9px] text-[#E8E9E8]/30 uppercase tracking-wider mb-1">{a.label}</div>
+                  <div className="text-xs text-[#E8E9E8]/70 font-medium capitalize">{a.val}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {ep.cliffhangerType && (
+            <div className="flex items-center gap-2">
+              <Zap className="w-3 h-3 text-[#C7F711]" />
+              <span className="text-[11px] text-[#E8E9E8]/50">Cliffhanger type: </span>
+              <span className="text-[11px] text-[#C7F711] capitalize font-medium">{ep.cliffhangerType}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* AI Suggestions */}
+      {ep.improvementSuggestion && (
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
+          <h4 className="text-[10px] font-semibold text-[#E8E9E8]/35 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <Sparkles className="w-3 h-3 text-[#C7F711]" />
+            AI Improvement Suggestion
+          </h4>
+          <p className="text-[11px] text-[#E8E9E8]/55 leading-relaxed">{ep.improvementSuggestion}</p>
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -496,6 +528,13 @@ function CanvasPanel({
                             <p className="text-[11px] text-[#E8E9E8]/35 mb-1">Pacing</p>
                             <ScoreBar score={ep.pacingScore} color="#7DD3FC" />
                           </div>
+                          <div>
+                            <div className="flex justify-between mb-1">
+                              <p className="text-[11px] text-[#E8E9E8]/35">ML Retention</p>
+                              <span className="text-[10px] font-mono text-[#86EFAC]/70">{Math.round(ep.retentionScore * 100)}%</span>
+                            </div>
+                            <ScoreBar score={parseFloat((ep.retentionScore * 10).toFixed(1))} color="#86EFAC" />
+                          </div>
                         </div>
                         <div className="flex items-center justify-between pt-1 border-t border-white/5">
                           <p className="text-[11px] text-[#E8E9E8]/25">{ep.wordCount.toLocaleString()} words</p>
@@ -620,19 +659,38 @@ export function Dashboard() {
 
       const canvasId = `canvas-${Date.now()}`;
       const totalWords = storyText.split(/\s+/).length;
+      const avgRetention =
+        episodes.length > 0
+          ? episodes.reduce((s: number, ep: any) => s + (ep.analytics?.retention_score ?? 0), 0) / episodes.length
+          : 0;
       const canvas: CanvasData = {
         id: canvasId,
         title: "Script Analysis",
         wordCount: totalWords,
         episodeCount: episodes.length,
-        overallScore: 8.5,
-        episodes: episodes.map((ep: any) => ({
-          title: ep.title || `Episode ${ep.episode_number}`,
-          cliffhangerScore: 8.0,
-          pacingScore: 8.0,
-          duration: "~90 sec",
-          wordCount: Math.round(totalWords / (episodes.length || 1)),
-        })),
+        overallScore: parseFloat((avgRetention * 10).toFixed(1)),
+        episodes: episodes.map((ep: any) => {
+          const rs = ep.analytics?.retention_score ?? 0;
+          const scaled = rs * 10;
+          return {
+            title: ep.title || `Episode ${ep.episode_number}`,
+            cliffhangerScore: parseFloat(Math.min(10, scaled * 1.05).toFixed(1)),
+            pacingScore: parseFloat(Math.min(10, scaled * 0.95).toFixed(1)),
+            duration: "~90 sec",
+            wordCount: Math.round(totalWords / (episodes.length || 1)),
+            retentionScore: rs,
+            cliffhangerType: ep.cliffhanger_type || "unknown",
+            emotionArc: ep.emotion_arc || { start: "", mid: "", end: "" },
+            improvementSuggestion: ep.improvement_suggestion || "",
+            segments: {
+              hook: ep.segments?.hook_0_15s || "",
+              conflict: ep.segments?.conflict_15_45s || "",
+              twist: ep.segments?.midpoint_twist_45_60s || "",
+              escalation: ep.segments?.escalation_60_75s || "",
+              cliffhanger: ep.segments?.cliffhanger_75_90s || "",
+            },
+          };
+        }),
         suggestions: episodes
           .filter((ep: any) => ep.improvement_suggestion)
           .map((ep: any) => ep.improvement_suggestion),
@@ -644,14 +702,14 @@ export function Dashboard() {
       const episodeLines = episodes
         .map(
           (ep: any) =>
-            `• "${ep.title}" — ${ep.cliffhanger_type || "cliffhanger"} · ~90 sec`
+            `• "${ep.title}" — ${ep.cliffhanger_type || "cliffhanger"} · ML Retention ${((ep.analytics?.retention_score ?? 0) * 100).toFixed(0)}%`
         )
         .join("\n");
 
       const aiMsg: Message = {
         id: `msg-${Date.now() + 1}`,
         type: "ai",
-        content: `I've analyzed your script! Here's what I found:\n\n**${episodes.length} Episodes Designed**\nYour story has been decomposed into ${episodes.length} high-retention vertical episodes (${totalWords.toLocaleString()} words).\n\n**Episode Breakdown**\n${episodeLines}\n\nOpen the canvas panel for detailed score breakdowns, a visual chart, and export options.`,
+        content: `I've analyzed your script! Here's what I found:\n\n**${episodes.length} Episodes Designed**\nYour story has been decomposed into ${episodes.length} high-retention vertical episodes (${totalWords.toLocaleString()} words). Average ML retention score: **${(avgRetention * 100).toFixed(0)}%**.\n\n**Episode Breakdown**\n${episodeLines}\n\nOpen the canvas panel for detailed breakdown, retention scores, and segment scripts.`,
         canvasId,
       };
       setMessages((prev) => [...prev, aiMsg]);
