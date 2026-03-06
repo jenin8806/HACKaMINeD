@@ -13,6 +13,8 @@ from pydantic import BaseModel
 from app.auth import get_current_uid, verify_firebase_token
 from app.db import get_user_profile, update_user_profile, upsert_user_profile
 from ai_engine.llm_response import call_llm
+from ai_engine.model_loader import load_models
+from ai_engine.analytics_engine import analyze_episode
 
 
 class SignupBody(BaseModel):
@@ -35,6 +37,7 @@ async def lifespan(app: FastAPI):
     # Startup: init Firebase Admin if credentials available
     from app.firebase_init import init_firebase
     init_firebase()
+    load_models()
     yield
     # Shutdown: nothing to do
     pass
@@ -105,13 +108,20 @@ async def auth_profile_update(body: ProfileUpdateBody, uid: str = Depends(get_cu
 
 @app.post("/api/analyze")
 async def analyze_story(body: AnalyzeBody, uid: str = Depends(get_current_uid)):
-    """Send user story to LLM and return episodic breakdown."""
+    """Send user story to LLM and return episodic breakdown with retention analytics."""
     if not body.story.strip():
         raise HTTPException(status_code=400, detail="Story text is required.")
 
     result = call_llm(body.story)
     if result is None:
         raise HTTPException(status_code=502, detail="LLM service unavailable.")
+
+    # Attach NLP + ML analytics to each episode
+    episodes = result.get("episodes", [])
+    total = len(episodes)
+    for episode in episodes:
+        ep_num = episode.get("episode_number", 1)
+        episode["analytics"] = analyze_episode(episode, ep_num, total)
 
     return result
 
