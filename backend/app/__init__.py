@@ -1,0 +1,1 @@
+# MINDed backend app
