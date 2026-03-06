@@ -23,8 +23,13 @@ def init_firebase():
 
     if not os.path.isfile(cred_path):
         # Run without Firebase: /api/auth/* will return 503 or require no token
+        print("[firebase_init] No valid service account file found — running without Firebase Admin.")
         return
 
-    cred = credentials.Certificate(cred_path)
-    firebase_admin.initialize_app(cred)
-    _firebase_initialized = True
+    try:
+        cred = credentials.Certificate(cred_path)
+        firebase_admin.initialize_app(cred)
+        _firebase_initialized = True
+    except ValueError as e:
+        print(f"[firebase_init] Invalid service account file ({e}) — running without Firebase Admin.")
+        return

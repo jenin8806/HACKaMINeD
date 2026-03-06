@@ -6,6 +6,7 @@ import {
   Zap, Sparkles, LogOut, BarChart2, TrendingUp, Clock, Layers, FileText,
   Code2, SlidersHorizontal, MessageSquare, ArrowLeft, Activity, Users, ChevronRight,
 } from "lucide-react";
+
 import {
   AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -13,6 +14,7 @@ import {
 import { useUser } from "../contexts/UserContext";
 import { UserSettingsDialog } from "./UserSettingsDialog";
 import FilmCamera3D from "./FilmCamera3D";
+import { auth } from "../firebase";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -104,7 +106,7 @@ function EpisodeDetailInPanel({ ep, idx, onBack }: { ep: CanvasEpisode; idx: num
       ? { title: "Boost the Cliffhanger", desc: "The ending hook can be sharpened. Try introducing an unresolved visual surprise or question in the final 60 seconds.", impact: "High" }
       : { title: "Cliffhanger is Excellent", desc: "Your ending hook scores very high. Maintain this momentum and consider teasing a future plot thread.", impact: "Keep" },
     ep.pacingScore < 8.5
-      ? { title: "Tighten the Pacing", desc: "Some scenes feel stretched. Cutting 10–15% of mid-section dialogue could sharpen audience engagement.", impact: "Medium" }
+      ? { title: "Tighten Pacing", desc: "Some scenes feel stretched. Cutting 10–15% of mid-section dialogue could sharpen audience engagement.", impact: "Medium" }
       : { title: "Pacing is Solid", desc: "The episode flows naturally. Keep using scene transitions to preserve this rhythm across the series.", impact: "Keep" },
     { title: "Expand the Emotional Arc", desc: `Emotional intensity peaks at ${ep.cliffhangerScore}/10. Adding a quiet beat before the climax would amplify the contrast and impact.`, impact: "Medium" },
   ];
@@ -581,51 +583,88 @@ export function Dashboard() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isAnalyzing]);
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!scriptText.trim()) return;
 
     if (messages.length === 0) {
       setSessionName(scriptText.trim().slice(0, 42));
     }
 
-    const userMsg: Message = { id: `msg-${Date.now()}`, type: "user", content: scriptText };
+    const storyText = scriptText;
+    const userMsg: Message = { id: `msg-${Date.now()}`, type: "user", content: storyText };
     setMessages((prev) => [...prev, userMsg]);
     setIsAnalyzing(true);
     setScriptText("");
 
-    setTimeout(() => {
+    try {
+      const fbUser = auth.currentUser;
+      if (!fbUser) throw new Error("Not signed in");
+      const token = await fbUser.getIdToken();
+
+      const res = await fetch("http://localhost:8000/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ story: storyText }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Analysis failed" }));
+        throw new Error(err.detail || "Analysis failed");
+      }
+
+      const result = await res.json();
+      const episodes = result.episodes || [];
+
       const canvasId = `canvas-${Date.now()}`;
-      const wc = 1100 + Math.floor(Math.random() * 400);
+      const totalWords = storyText.split(/\s+/).length;
       const canvas: CanvasData = {
         id: canvasId,
         title: "Script Analysis",
-        wordCount: wc,
-        episodeCount: 3,
+        wordCount: totalWords,
+        episodeCount: episodes.length,
         overallScore: 8.5,
-        episodes: [
-          { title: "The Setup", cliffhangerScore: 8.5, pacingScore: 7.8, duration: "~10 min", wordCount: Math.round(wc * 0.31) },
-          { title: "Rising Action", cliffhangerScore: 9.2, pacingScore: 8.9, duration: "~12 min", wordCount: Math.round(wc * 0.37) },
-          { title: "Resolution", cliffhangerScore: 7.8, pacingScore: 8.2, duration: "~11 min", wordCount: Math.round(wc * 0.32) },
-        ],
-        suggestions: [
-          "Strengthen the opening hook in Episode 1 to grab viewers in the first 60 seconds.",
-          "Consider splitting Episode 2 — the pacing plateau at the mid-point softens tension.",
-          "Add a post-credits scene to Episode 3 to seed storylines for a future season.",
-        ],
+        episodes: episodes.map((ep: any) => ({
+          title: ep.title || `Episode ${ep.episode_number}`,
+          cliffhangerScore: 8.0,
+          pacingScore: 8.0,
+          duration: "~90 sec",
+          wordCount: Math.round(totalWords / (episodes.length || 1)),
+        })),
+        suggestions: episodes
+          .filter((ep: any) => ep.improvement_suggestion)
+          .map((ep: any) => ep.improvement_suggestion),
       };
 
       setCanvases((prev) => ({ ...prev, [canvasId]: canvas }));
       setActiveCanvasId(canvasId);
 
+      const episodeLines = episodes
+        .map(
+          (ep: any) =>
+            `• "${ep.title}" — ${ep.cliffhanger_type || "cliffhanger"} · ~90 sec`
+        )
+        .join("\n");
+
       const aiMsg: Message = {
         id: `msg-${Date.now() + 1}`,
         type: "ai",
-        content: `I've analyzed your script! Here's what I found:\n\n**Overall Score: 8.5 / 10**\nYour script demonstrates strong narrative structure across ${canvas.episodeCount} episodes (${canvas.wordCount.toLocaleString()} words total).\n\n**Episode Breakdown**\n• "The Setup" — Cliffhanger 8.5/10 · ~10 min\n• "Rising Action" — Cliffhanger 9.2/10 · ~12 min\n• "Resolution" — Cliffhanger 7.8/10 · ~11 min\n\n**Key Insight:** Episode 2 carries your strongest emotional peak — ideal for mid-season engagement. Open the canvas panel for detailed score breakdowns, a visual chart, and export options.`,
+        content: `I've analyzed your script! Here's what I found:\n\n**${episodes.length} Episodes Designed**\nYour story has been decomposed into ${episodes.length} high-retention vertical episodes (${totalWords.toLocaleString()} words).\n\n**Episode Breakdown**\n${episodeLines}\n\nOpen the canvas panel for detailed score breakdowns, a visual chart, and export options.`,
         canvasId,
       };
       setMessages((prev) => [...prev, aiMsg]);
+    } catch (err: any) {
+      const errMsg: Message = {
+        id: `msg-${Date.now() + 1}`,
+        type: "ai",
+        content: `Sorry, analysis failed: ${err.message || "Unknown error"}. Please try again.`,
+      };
+      setMessages((prev) => [...prev, errMsg]);
+    } finally {
       setIsAnalyzing(false);
-    }, 2000);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
