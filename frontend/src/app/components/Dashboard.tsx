@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router";
 import {
   Menu, X, FolderOpen, Brain, Plus, ArrowUp, PanelLeftClose, PanelLeft,
   Zap, Sparkles, LogOut, BarChart2, TrendingUp, Clock, Layers, FileText,
-  Code2, SlidersHorizontal, MessageSquare, ArrowLeft, Activity, Users, ChevronRight,
+  Code2, SlidersHorizontal, MessageSquare, ArrowLeft, Activity, Users, ChevronRight, Trash2,
 } from "lucide-react";
 
 import {
@@ -15,6 +15,8 @@ import { useUser } from "../contexts/UserContext";
 import { UserSettingsDialog } from "./UserSettingsDialog";
 import FilmCamera3D from "./FilmCamera3D";
 import { auth } from "../firebase";
+import { saveProject, saveChatSession, updateChatSession, getChatSessions, deleteChatSession } from "../services/projectsService";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -595,6 +597,34 @@ export function Dashboard() {
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
   const [sessionId, setSessionId] = useState<string>(() => `session-${Date.now()}`);
   const [sessionName, setSessionName] = useState<string | null>(null);
+  const [firestoreSessionDocId, setFirestoreSessionDocId] = useState<string | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
+
+  // Load chat sessions from Firestore once auth is resolved
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (fbUser) => {
+      if (!fbUser) {
+        setChatHistory([]);
+        setHistoryLoading(false);
+        return;
+      }
+      try {
+        const sessions = await getChatSessions(fbUser.uid);
+        setChatHistory(sessions.map(s => ({
+          id: s.id,
+          name: s.name,
+          messages: s.messages as Message[],
+          canvases: s.canvases as Record<string, CanvasData>,
+          createdAt: s.updatedAt.getTime(),
+        })));
+      } catch (err) {
+        console.error("Failed to load chat sessions:", err);
+      } finally {
+        setHistoryLoading(false);
+      }
+    });
+    return unsub;
+  }, [])
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useUser();
@@ -699,6 +729,9 @@ export function Dashboard() {
       setCanvases((prev) => ({ ...prev, [canvasId]: canvas }));
       setActiveCanvasId(canvasId);
 
+      // Persist to Firestore in the background
+      saveProject(fbUser.uid, canvas, storyText).catch(console.error);
+
       const episodeLines = episodes
         .map(
           (ep: any) =>
@@ -713,6 +746,27 @@ export function Dashboard() {
         canvasId,
       };
       setMessages((prev) => [...prev, aiMsg]);
+
+      // Persist chat session to Firestore
+      const sessionTitle = sessionName ?? storyText.slice(0, 42);
+      const allMsgs = [...messages, userMsg, aiMsg];
+      const allCvs = { ...canvases, [canvasId]: canvas };
+      if (firestoreSessionDocId) {
+        updateChatSession(firestoreSessionDocId, sessionTitle, allMsgs, allCvs)
+          .then(() => setChatHistory(prev => prev.map(s =>
+            s.id === firestoreSessionDocId ? { ...s, name: sessionTitle, messages: allMsgs, canvases: allCvs } : s
+          )))
+          .catch(console.error);
+      } else {
+        saveChatSession(fbUser.uid, sessionTitle, allMsgs, allCvs)
+          .then(docId => {
+            setFirestoreSessionDocId(docId);
+            setSessionId(docId);
+            const newSession: ChatSession = { id: docId, name: sessionTitle, messages: allMsgs, canvases: allCvs, createdAt: Date.now() };
+            setChatHistory(prev => [newSession, ...prev.filter(s => s.id !== docId)]);
+          })
+          .catch(console.error);
+      }
     } catch (err: any) {
       const errMsg: Message = {
         id: `msg-${Date.now() + 1}`,
@@ -792,15 +846,7 @@ export function Dashboard() {
               <div className="px-3 py-2">
                 <button
                   onClick={() => {
-                    if (messages.length > 0) {
-                      const name = sessionName || messages[0].content.slice(0, 42);
-                      setChatHistory(prev => {
-                        const idx = prev.findIndex(s => s.id === sessionId);
-                        const snap: ChatSession = { id: sessionId, name, messages, canvases, createdAt: Date.now() };
-                        if (idx >= 0) { const u = [...prev]; u[idx] = snap; return u; }
-                        return [snap, ...prev];
-                      });
-                    }
+                    setFirestoreSessionDocId(null);
                     setSessionId(`session-${Date.now()}`);
                     setSessionName(null);
                     setMessages([]);
@@ -837,41 +883,66 @@ export function Dashboard() {
               </div>
 
               {/* Recent Chats */}
-              {chatHistory.length > 0 && (
+              {(historyLoading || messages.length > 0 || chatHistory.length > 0) && (
                 <div className="px-3 pt-4 pb-2 flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:w-[2px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
                   <h3 className="px-3 text-[10px] font-semibold text-[#E8E9E8]/25 uppercase tracking-wider mb-2">Recent</h3>
+                  {historyLoading && (
+                    <div className="space-y-1 px-1">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="h-7 rounded-lg bg-white/[0.04] animate-pulse" style={{ opacity: 1 - i * 0.2 }} />
+                      ))}
+                    </div>
+                  )}
+                  {!historyLoading && (
                   <div className="space-y-0.5">
-                    {chatHistory.map((session) => (
-                      <button
-                        key={session.id}
-                        onClick={() => {
-                          if (messages.length > 0) {
-                            const name = sessionName || messages[0].content.slice(0, 42);
-                            setChatHistory(prev => {
-                              const idx = prev.findIndex(s => s.id === sessionId);
-                              const cur: ChatSession = { id: sessionId, name, messages, canvases, createdAt: Date.now() };
-                              if (idx >= 0) { const u = [...prev]; u[idx] = cur; return u; }
-                              return [cur, ...prev];
-                            });
-                          }
-                          setSessionId(session.id);
-                          setSessionName(session.name);
-                          setMessages(session.messages);
-                          setCanvases(session.canvases);
-                          setActiveCanvasId(null);
-                          if (!isDesktop) setSidebarOpen(false);
-                        }}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all text-xs border ${
-                          session.id === sessionId
-                            ? "bg-white/[0.06] text-[#E8E9E8]/75 border-white/[0.07]"
-                            : "text-[#E8E9E8]/30 hover:bg-white/[0.04] hover:text-[#E8E9E8]/55 border-transparent"
-                        }`}
+                    {/* Active session — always shown at top while in progress */}
+                    {messages.length > 0 && (
+                      <div
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs border bg-white/[0.06] text-[#E8E9E8]/75 border-white/[0.07]"
                       >
                         <MessageSquare className="w-3 h-3 flex-shrink-0 opacity-40" />
-                        <span className="truncate text-left">{session.name}</span>
-                      </button>
+                        <span className="truncate text-left">
+                          {sessionName || messages[0]?.content.slice(0, 42) || "New Chat"}
+                        </span>
+                      </div>
+                    )}
+                    {/* Past sessions */}
+                    {chatHistory.filter(s => s.id !== sessionId).map((session) => (
+                      <div
+                        key={session.id}
+                        className="w-full flex items-center gap-1 px-3 py-2 rounded-lg transition-all text-xs border text-[#E8E9E8]/30 hover:bg-white/[0.04] hover:text-[#E8E9E8]/55 border-transparent group/item"
+                      >
+                        <button
+                          className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
+                          onClick={() => {
+                            setFirestoreSessionDocId(session.id);
+                            setSessionId(session.id);
+                            setSessionName(session.name);
+                            setMessages(session.messages);
+                            setCanvases(session.canvases);
+                            // Restore the canvas panel to the last canvas in this session
+                            const lastCanvasMsg = [...session.messages].reverse().find(m => m.type === "ai" && m.canvasId);
+                            setActiveCanvasId(lastCanvasMsg?.canvasId ?? null);
+                            if (!isDesktop) setSidebarOpen(false);
+                          }}
+                        >
+                          <MessageSquare className="w-3 h-3 flex-shrink-0 opacity-40" />
+                          <span className="truncate">{session.name}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            deleteChatSession(session.id).catch(console.error);
+                            setChatHistory(prev => prev.filter(s => s.id !== session.id));
+                          }}
+                          className="opacity-0 group-hover/item:opacity-100 p-1 rounded text-[#E8E9E8]/20 hover:text-red-400 transition-all flex-shrink-0"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     ))}
                   </div>
+                  )}
                 </div>
               )}
 
