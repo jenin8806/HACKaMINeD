@@ -1,4 +1,4 @@
-import { motion, useInView, AnimatePresence } from "motion/react";
+﻿import { motion, useInView, AnimatePresence } from "motion/react";
 import { useRef, useState } from "react";
 import { Upload, Sparkles, Target, Lightbulb, Send, ChevronDown } from "lucide-react";
 
@@ -46,17 +46,19 @@ export function HowItWorks() {
       ref={ref}
       className="relative py-24 lg:py-32 bg-[#0E1921] overflow-hidden"
     >
-      {/* Background Grid Animation */}
-      <div className="absolute inset-0 opacity-20">
+      {/* Background Grid — base dim layer */}
+      <div className="absolute inset-0 pointer-events-none" style={{ opacity: 0.15 }}>
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: `linear-gradient(rgba(199, 247, 17, 0.1) 1px, transparent 1px),
-                             linear-gradient(90deg, rgba(199, 247, 17, 0.1) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(rgba(199,247,17,0.18) 1px, transparent 1px),
+                             linear-gradient(90deg, rgba(199,247,17,0.18) 1px, transparent 1px)`,
             backgroundSize: "50px 50px",
           }}
         />
       </div>
+
+
 
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -134,8 +136,9 @@ export function HowItWorks() {
                   index % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"
                 }`}
                 initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
-                animate={isInView ? { opacity: 1, x: 0 } : {}}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{ duration: 0.7 }}
               >
                 {/* Content Card */}
                 <div className="flex-1 w-full">
@@ -144,7 +147,7 @@ export function HowItWorks() {
                     className="relative p-6 sm:p-8 rounded-2xl bg-[#314A52]/70 backdrop-blur-md border border-[#C7F711]/10 hover:border-[#C7F711]/30 transition-all duration-300 group cursor-pointer overflow-hidden"
                     whileHover={{ 
                       scale: 1.01,
-                      boxShadow: "0 10px 30px rgba(199, 247, 17, 0.05)",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
                     }}
                     layout
                   >
@@ -195,54 +198,20 @@ export function HowItWorks() {
                       </AnimatePresence>
                     </motion.div>
 
-                    {/* Extremely subtle pulse animation, almost unnoticeable to fix harshness */}
-                    <motion.div
-                      className="absolute -inset-1 rounded-2xl bg-[#C7F711]/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-                      animate={{
-                        scale: [1, 1.02, 1],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      }}
-                    />
+
                   </motion.div>
                 </div>
 
                 {/* Center Node */}
                 <div className="hidden lg:flex items-center justify-center w-24 shrink-0">
                   <motion.div
-                    className="relative w-12 h-12 rounded-full bg-[#0E1921] border-4 border-[#C7F711] flex items-center justify-center z-10"
+                    className="relative w-7 h-7 rounded-full bg-[#0E1921] border-2 border-[#C7F711] flex items-center justify-center z-10"
                     initial={{ scale: 0 }}
-                    animate={isInView ? { scale: 1 } : {}}
-                    transition={{ duration: 0.5, delay: index * 0.2 + 0.3 }}
+                    whileInView={{ scale: 1 }}
+                    viewport={{ once: true, amount: 0.5 }}
+                    transition={{ duration: 0.4 }}
                   >
-                    <motion.div
-                      className="w-6 h-6 rounded-full bg-[#C7F711]"
-                      animate={{
-                        scale: [1, 1.2, 1],
-                        opacity: [0.5, 1, 0.5],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      }}
-                    />
-                    {/* Pulse rings */}
-                    <motion.div
-                      className="absolute inset-0 rounded-full border-2 border-[#C7F711]"
-                      animate={{
-                        scale: [1, 2, 2],
-                        opacity: [0.5, 0, 0],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeOut",
-                      }}
-                    />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#C7F711]" />
                   </motion.div>
                 </div>
 

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { useUser } from "../contexts/UserContext";
-import { Camera, User as UserIcon, Mail, Shield, Bell, CreditCard, X, Check } from "lucide-react";
+import { Camera, User as UserIcon, Mail, Shield, Bell, CreditCard, Check } from "lucide-react";
 
 const NAV_TABS = [
   { id: "profile", label: "Profile", icon: UserIcon },
@@ -25,6 +25,16 @@ export function UserSettingsDialog({ open, onOpenChange }: { open: boolean; onOp
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setProfilePic(reader.result as string);
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     if (open) {
@@ -89,12 +99,7 @@ export function UserSettingsDialog({ open, onOpenChange }: { open: boolean; onOp
             <h2 className="text-base font-semibold text-[#E8E9E8]">Account Settings</h2>
             <p className="text-xs text-[#E8E9E8]/40 mt-0.5">Manage your profile and preferences</p>
           </div>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="p-1.5 rounded-lg text-[#E8E9E8]/40 hover:text-[#E8E9E8] hover:bg-white/5 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
         </div>
 
         <div className="flex min-h-[420px]">
@@ -132,9 +137,16 @@ export function UserSettingsDialog({ open, onOpenChange }: { open: boolean; onOp
                         </div>
                       )}
                     </div>
-                    <div className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                    <div onClick={() => fileInputRef.current?.click()} className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
                       <Camera className="w-5 h-5 text-white" />
                     </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-[#E8E9E8]">{username || "Username"}</p>
@@ -178,15 +190,9 @@ export function UserSettingsDialog({ open, onOpenChange }: { open: boolean; onOp
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-[#E8E9E8]/60 uppercase tracking-wider flex items-center gap-2">
-                      <Camera className="w-3.5 h-3.5" /> Profile Picture URL
+                      <Camera className="w-3.5 h-3.5" /> Profile Picture
                     </label>
-                    <input
-                      value={profilePic}
-                      onChange={(e) => setProfilePic(e.target.value)}
-                      placeholder="https://example.com/photo.jpg"
-                      className="w-full h-10 px-3 rounded-xl bg-[#1A262E] border border-white/10 text-sm text-[#E8E9E8] placeholder:text-[#E8E9E8]/30 focus:outline-none focus:border-[#C7F711]/50 focus:ring-1 focus:ring-[#C7F711]/20 transition-all"
-                    />
-                    <p className="text-[10px] text-[#E8E9E8]/30">Paste any publicly accessible image URL</p>
+                    <p className="text-[10px] text-[#E8E9E8]/40">Hover over your avatar and click to upload a photo from your device</p>
                   </div>
                 </div>
               </div>
