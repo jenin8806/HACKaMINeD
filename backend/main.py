@@ -12,9 +12,10 @@ from pydantic import BaseModel
 # Firebase Admin is initialized in auth module
 from app.auth import get_current_uid, verify_firebase_token
 from app.db import get_user_profile, update_user_profile, upsert_user_profile
-from ai_engine.llm_response import call_llm
+from ai_engine.llm_response import call_llm, call_llm_apply_changes, call_llm_chat
 from ai_engine.model_loader import load_models
 from ai_engine.analytics_engine import analyze_episode
+from typing import Any
 
 
 class SignupBody(BaseModel):
@@ -24,6 +25,12 @@ class SignupBody(BaseModel):
 
 class AnalyzeBody(BaseModel):
     story: str
+
+
+class ChatBody(BaseModel):
+    message: str
+    canvas_episodes: list[Any] | None = None
+    apply_changes: bool = False
 
 
 class ProfileUpdateBody(BaseModel):
@@ -124,6 +131,37 @@ async def analyze_story(body: AnalyzeBody, uid: str = Depends(get_current_uid)):
         episode["analytics"] = analyze_episode(episode, ep_num, total)
 
     return result
+
+
+@app.post("/api/chat")
+async def chat_message(body: ChatBody, uid: str = Depends(get_current_uid)):
+    """Handle follow-up chat: either apply improvement changes or answer a question."""
+
+    if not body.message.strip():
+        raise HTTPException(status_code=400, detail="Message is required.")
+
+    if body.apply_changes:
+        if not body.canvas_episodes:
+            raise HTTPException(status_code=400, detail="canvas_episodes required for apply_changes.")
+
+        result = call_llm_apply_changes(body.canvas_episodes)
+        if result is None:
+            raise HTTPException(status_code=502, detail="LLM service unavailable.")
+
+        episodes = result.get("episodes", [])
+        total = len(episodes)
+        for episode in episodes:
+            ep_num = episode.get("episode_number", 1)
+            episode["analytics"] = analyze_episode(episode, ep_num, total)
+
+        return {"type": "revision", "episodes": episodes}
+
+    # General follow-up question
+    reply = call_llm_chat(body.message, body.canvas_episodes or [])
+    if reply is None:
+        raise HTTPException(status_code=502, detail="LLM service unavailable.")
+
+    return {"type": "message", "content": reply}
 
 
 @app.get("/health")

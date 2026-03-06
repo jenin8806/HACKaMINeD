@@ -126,6 +126,13 @@ export interface StoredMessage {
   type: "user" | "ai";
   content: string;
   canvasId?: string;
+  improvements?: Array<{
+    episodeTitle: string;
+    episodeNum: number;
+    what: string;
+    why: string;
+    scriptFix: string;
+  }>;
 }
 
 export interface StoredChatSession {
