@@ -56,7 +56,7 @@ export function Hero() {
       const scale = Math.max(w / iw, h / ih);
       const sw = iw * scale;
       const sh = ih * scale;
-      const sx = (w - sw) / 2;
+      const sx = (w - sw) * 0.3;
       const sy = (h - sh) / 2 - h * 0.08;
       ctx.drawImage(img, sx, sy, sw, sh);
       frameIndex = (frameIndex + 1) % TOTAL_FRAMES;

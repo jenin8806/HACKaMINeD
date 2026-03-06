@@ -31,6 +31,20 @@ import {
 type RetentionPoint = { segment: string; retention: number };
 type EmotionPoint   = { time: string; intensity: number };
 
+type EpisodeImprovement = {
+  what: string;
+  why: string;
+  scriptFix: string;
+};
+
+type ImprovementCard = {
+  episodeTitle: string;
+  episodeNum: number;
+  what: string;
+  why: string;
+  scriptFix: string;
+};
+
 type CanvasEpisode = {
   title: string;
   cliffhangerScore: number;
@@ -41,6 +55,7 @@ type CanvasEpisode = {
   cliffhangerType: string;
   emotionArc: { start: string; mid: string; end: string };
   improvementSuggestion: string;
+  improvements: EpisodeImprovement;
   segments: {
     hook: string;
     conflict: string;
@@ -67,6 +82,7 @@ type Message = {
   type: "user" | "ai";
   content: string;
   canvasId?: string;
+  improvements?: ImprovementCard[];
 };
 
 type ChatSession = {
@@ -722,6 +738,7 @@ export function Dashboard() {
         episodes: episodes.map((ep: any) => {
           const rs = ep.analytics?.retention_score ?? 0;
           const scaled = rs * 10;
+          const rawImp = ep.improvements || {};
           return {
             title: ep.title || `Episode ${ep.episode_number}`,
             cliffhangerScore: parseFloat(Math.min(10, scaled * 1.05).toFixed(1)),
@@ -731,7 +748,12 @@ export function Dashboard() {
             retentionScore: rs,
             cliffhangerType: ep.cliffhanger_type || "unknown",
             emotionArc: ep.emotion_arc || { start: "", mid: "", end: "" },
-            improvementSuggestion: ep.improvement_suggestion || "",
+            improvementSuggestion: ep.improvement_suggestion || rawImp.what || "",
+            improvements: {
+              what: rawImp.what || "",
+              why: rawImp.why || "",
+              scriptFix: rawImp.script_fix || "",
+            },
             segments: {
               hook: ep.segments?.hook_0_15s || "",
               conflict: ep.segments?.conflict_15_45s || "",
@@ -761,11 +783,25 @@ export function Dashboard() {
         )
         .join("\n");
 
+      const improvements: ImprovementCard[] = episodes
+        .map((ep: any, i: number) => {
+          const imp = ep.improvements || {};
+          return {
+            episodeTitle: ep.title || `Episode ${ep.episode_number}`,
+            episodeNum: i + 1,
+            what: imp.what || "",
+            why: imp.why || "",
+            scriptFix: imp.script_fix || "",
+          };
+        })
+        .filter((c: ImprovementCard) => c.what);
+
       const aiMsg: Message = {
         id: `msg-${Date.now() + 1}`,
         type: "ai",
-        content: `I've analyzed your script! Here's what I found:\n\n**${episodes.length} Episodes Designed**\nYour story has been decomposed into ${episodes.length} high-retention vertical episodes (${totalWords.toLocaleString()} words). Average ML retention score: **${(avgRetention * 100).toFixed(0)}%**.\n\n**Episode Breakdown**\n${episodeLines}\n\nOpen the canvas panel for detailed breakdown, retention scores, and segment scripts.`,
+        content: `I've analyzed your script! Here's what I found:\n\n**${episodes.length} Episodes Designed**\nYour story has been decomposed into ${episodes.length} high-retention vertical episodes (${totalWords.toLocaleString()} words). Average ML retention score: **${(avgRetention * 100).toFixed(0)}%**.\n\n**Episode Breakdown**\n${episodeLines}\n\nOpen the canvas panel for detailed breakdown, retention scores, and segment scripts.\n\n**Improvement Suggestions**\nSee the cards below — type **"apply changes"** to apply all suggestions at once.`,
         canvasId,
+        improvements,
       };
       setMessages((prev) => [...prev, aiMsg]);
 
@@ -809,6 +845,146 @@ export function Dashboard() {
         setScriptText(event.target?.result as string);
       };
       reader.readAsText(file);
+    }
+  };
+
+  const isApplyIntent = (text: string) =>
+    /\b(apply|implement|use|make)\b.*\b(change|this|it|suggestion|improvement|fix|all)\b/i.test(text.trim())
+    || ["apply", "yes", "do it"].includes(text.trim().toLowerCase());
+
+  const handleSend = async () => {
+    if (!scriptText.trim() || isAnalyzing) return;
+    if (activeCanvasId !== null && scriptText.trim().split(/\s+/).length <= 80) {
+      await handleChat();
+    } else {
+      await handleAnalyze();
+    }
+  };
+
+  const handleChat = async () => {
+    if (!scriptText.trim()) return;
+    const userText = scriptText.trim();
+    const userMsg: Message = { id: `msg-${Date.now()}`, type: "user", content: userText };
+    setMessages((prev) => [...prev, userMsg]);
+    setIsAnalyzing(true);
+    setScriptText("");
+
+    try {
+      const fbUser = auth.currentUser;
+      if (!fbUser) throw new Error("Not signed in");
+      const token = await fbUser.getIdToken();
+      const applyMode = isApplyIntent(userText);
+      const currentCanvas = activeCanvasId ? canvases[activeCanvasId] : null;
+
+      const canvasEpisodes = currentCanvas?.episodes.map((ep, i) => ({
+        episode_number: i + 1,
+        title: ep.title,
+        cliffhanger_type: ep.cliffhangerType,
+        emotion_arc: ep.emotionArc,
+        segments: {
+          hook_0_15s: ep.segments.hook,
+          conflict_15_45s: ep.segments.conflict,
+          midpoint_twist_45_60s: ep.segments.twist,
+          escalation_60_75s: ep.segments.escalation,
+          cliffhanger_75_90s: ep.segments.cliffhanger,
+        },
+        improvements: {
+          what: ep.improvements?.what || ep.improvementSuggestion || "",
+          why: ep.improvements?.why || "",
+          script_fix: ep.improvements?.scriptFix || "",
+        },
+      })) ?? [];
+
+      const res = await fetch("http://localhost:8000/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ message: userText, canvas_episodes: canvasEpisodes, apply_changes: applyMode }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Chat failed" }));
+        throw new Error(err.detail || "Chat failed");
+      }
+
+      const data = await res.json();
+      let aiMsg: Message;
+
+      if (data.type === "revision" && data.episodes) {
+        const totalWords = currentCanvas?.wordCount ?? 0;
+        const eps = data.episodes;
+        const avgRetention = eps.length > 0
+          ? eps.reduce((s: number, ep: any) => s + (ep.analytics?.retention_score ?? 0), 0) / eps.length : 0;
+
+        const updatedEpisodes: CanvasEpisode[] = eps.map((ep: any) => {
+          const rs = ep.analytics?.retention_score ?? 0;
+          const scaled = rs * 10;
+          const rawImp = ep.improvements || {};
+          return {
+            title: ep.title || `Episode ${ep.episode_number}`,
+            cliffhangerScore: parseFloat(Math.min(10, scaled * 1.05).toFixed(1)),
+            pacingScore: parseFloat(Math.min(10, scaled * 0.95).toFixed(1)),
+            duration: "~90 sec",
+            wordCount: Math.round(totalWords / (eps.length || 1)),
+            retentionScore: rs,
+            cliffhangerType: ep.cliffhanger_type || "unknown",
+            emotionArc: ep.emotion_arc || { start: "", mid: "", end: "" },
+            improvementSuggestion: rawImp.what || "",
+            improvements: { what: rawImp.what || "", why: rawImp.why || "", scriptFix: rawImp.script_fix || "" },
+            segments: {
+              hook: ep.segments?.hook_0_15s || "",
+              conflict: ep.segments?.conflict_15_45s || "",
+              twist: ep.segments?.midpoint_twist_45_60s || "",
+              escalation: ep.segments?.escalation_60_75s || "",
+              cliffhanger: ep.segments?.cliffhanger_75_90s || "",
+            },
+            retentionCurve: ep.analytics?.retention_curve ?? [],
+            emotionCurve: ep.analytics?.emotion_curve ?? [],
+          };
+        });
+
+        let revisedCanvasId = activeCanvasId;
+        if (currentCanvas) {
+          revisedCanvasId = `canvas-${Date.now()}`;
+          const revisedCanvas: CanvasData = {
+            ...currentCanvas,
+            id: revisedCanvasId,
+            title: `${currentCanvas.title} (Revised)`,
+            overallScore: parseFloat((avgRetention * 10).toFixed(1)),
+            episodes: updatedEpisodes,
+            suggestions: updatedEpisodes.map((ep) => ep.improvements.what).filter(Boolean),
+          };
+          setCanvases((prev) => ({ ...prev, [revisedCanvasId!]: revisedCanvas }));
+          setActiveCanvasId(revisedCanvasId);
+        }
+
+        const changedTitles = updatedEpisodes.map((ep) => `• ${ep.title}`).join("\n");
+        aiMsg = {
+          id: `msg-${Date.now() + 1}`,
+          type: "ai",
+          content: `All improvements applied! A new revised canvas has been created alongside the original.\n\n${changedTitles}\n\nThe original canvas is preserved — use the canvas selector to compare.`,
+          canvasId: revisedCanvasId ?? undefined,
+        };
+      } else {
+        aiMsg = {
+          id: `msg-${Date.now() + 1}`,
+          type: "ai",
+          content: data.content || "I couldn't generate a response. Please try again.",
+        };
+      }
+
+      setMessages((prev) => [...prev, aiMsg]);
+      const sessionTitle = sessionName ?? userText.slice(0, 42);
+      const allMsgs = [...messages, userMsg, aiMsg];
+      const allCvs = { ...canvases };
+      if (firestoreSessionDocId) {
+        updateChatSession(firestoreSessionDocId, sessionTitle, allMsgs, allCvs).catch(console.error);
+      }
+    } catch (err: any) {
+      setMessages((prev) => [...prev, {
+        id: `msg-${Date.now() + 1}`, type: "ai",
+        content: `Sorry, that failed: ${err.message || "Unknown error"}. Please try again.`,
+      }]);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -1064,7 +1240,7 @@ export function Dashboard() {
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
-                            handleAnalyze();
+                            handleSend();
                           }
                         }}
                         placeholder="Message TheVbox AI..."
@@ -1072,7 +1248,7 @@ export function Dashboard() {
                         rows={1}
                       />
                       <button
-                        onClick={handleAnalyze}
+                        onClick={handleSend}
                         disabled={!scriptText.trim() || isAnalyzing}
                         className="mb-1 p-2 bg-[#E8E9E8] text-[#0E1921] rounded-full hover:bg-[#C7F711] disabled:opacity-20 disabled:cursor-not-allowed transition-all flex-shrink-0"
                       >
@@ -1135,6 +1311,88 @@ export function Dashboard() {
                                 )}
                               </div>
                             )}
+                            {/* Improvement cards */}
+                            {message.improvements && message.improvements.length > 0 && (
+                              <div className="mt-4 space-y-2">
+                                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#C7F711]/60 mb-2">AI Improvement Suggestions</p>
+                                {message.improvements.map((imp, i) => (
+                                  <div key={i} className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-5 h-5 rounded-md bg-[#C7F711]/10 text-[#C7F711] flex items-center justify-center text-[10px] font-bold flex-shrink-0">{imp.episodeNum}</span>
+                                      <span className="text-[13px] font-medium text-[#E8E9E8] truncate">{imp.episodeTitle}</span>
+                                    </div>
+                                    {imp.what && (
+                                      <div>
+                                        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#7DD3FC]/70 mb-0.5">What to change</p>
+                                        <p className="text-[13px] text-[#B8C8CC]">{imp.what}</p>
+                                      </div>
+                                    )}
+                                    {imp.why && (
+                                      <div>
+                                        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#F472B6]/70 mb-0.5">Why it matters</p>
+                                        <p className="text-[13px] text-[#B8C8CC]">{imp.why}</p>
+                                      </div>
+                                    )}
+                                    {imp.scriptFix && (
+                                      <div>
+                                        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#86EFAC]/70 mb-0.5">Suggested script</p>
+                                        <p className="text-[13px] text-[#B8C8CC] italic leading-relaxed">"{imp.scriptFix}"</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                                <button
+                                  onClick={async () => {
+                                    if (isAnalyzing) return;
+                                    const currentCanvas = activeCanvasId ? canvases[activeCanvasId] : null;
+                                    const userMsg: Message = { id: `msg-${Date.now()}`, type: "user", content: "apply changes" };
+                                    setMessages((m) => [...m, userMsg]);
+                                    setIsAnalyzing(true);
+                                    try {
+                                      const fbUser = auth.currentUser;
+                                      if (!fbUser) throw new Error("Not signed in");
+                                      const token = await fbUser.getIdToken();
+                                      const canvasEpisodes = currentCanvas?.episodes.map((ep, idx) => ({
+                                        episode_number: idx + 1, title: ep.title,
+                                        cliffhanger_type: ep.cliffhangerType, emotion_arc: ep.emotionArc,
+                                        segments: { hook_0_15s: ep.segments.hook, conflict_15_45s: ep.segments.conflict, midpoint_twist_45_60s: ep.segments.twist, escalation_60_75s: ep.segments.escalation, cliffhanger_75_90s: ep.segments.cliffhanger },
+                                        improvements: { what: ep.improvements?.what || ep.improvementSuggestion || "", why: ep.improvements?.why || "", script_fix: ep.improvements?.scriptFix || "" },
+                                      })) ?? [];
+                                      const res = await fetch("http://localhost:8000/api/chat", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                        body: JSON.stringify({ message: "apply changes", canvas_episodes: canvasEpisodes, apply_changes: true }),
+                                      });
+                                      if (!res.ok) throw new Error("Apply changes failed");
+                                      const data = await res.json();
+                                      if (data.type === "revision" && data.episodes) {
+                                        const totalWords = currentCanvas?.wordCount ?? 0;
+                                        const eps = data.episodes;
+                                        const avgRet = eps.length > 0 ? eps.reduce((s: number, ep: any) => s + (ep.analytics?.retention_score ?? 0), 0) / eps.length : 0;
+                                        const updatedEps: CanvasEpisode[] = eps.map((ep: any) => {
+                                          const rs = ep.analytics?.retention_score ?? 0; const sc = rs * 10; const ri = ep.improvements || {};
+                                          return { title: ep.title || `Episode ${ep.episode_number}`, cliffhangerScore: parseFloat(Math.min(10, sc * 1.05).toFixed(1)), pacingScore: parseFloat(Math.min(10, sc * 0.95).toFixed(1)), duration: "~90 sec", wordCount: Math.round(totalWords / (eps.length || 1)), retentionScore: rs, cliffhangerType: ep.cliffhanger_type || "unknown", emotionArc: ep.emotion_arc || { start: "", mid: "", end: "" }, improvementSuggestion: ri.what || "", improvements: { what: ri.what || "", why: ri.why || "", scriptFix: ri.script_fix || "" }, segments: { hook: ep.segments?.hook_0_15s || "", conflict: ep.segments?.conflict_15_45s || "", twist: ep.segments?.midpoint_twist_45_60s || "", escalation: ep.segments?.escalation_60_75s || "", cliffhanger: ep.segments?.cliffhanger_75_90s || "" }, retentionCurve: ep.analytics?.retention_curve ?? [], emotionCurve: ep.analytics?.emotion_curve ?? [] };
+                                        });
+                                        let newId = activeCanvasId;
+                                        if (currentCanvas) {
+                                          newId = `canvas-${Date.now()}`;
+                                          setCanvases((prev) => ({ ...prev, [newId!]: { ...currentCanvas, id: newId!, title: `${currentCanvas.title} (Revised)`, overallScore: parseFloat((avgRet * 10).toFixed(1)), episodes: updatedEps, suggestions: updatedEps.map((ep) => ep.improvements.what).filter(Boolean) } }));
+                                          setActiveCanvasId(newId);
+                                        }
+                                        setMessages((m) => [...m, { id: `msg-${Date.now() + 1}`, type: "ai", content: `All improvements applied! A new revised canvas has been created alongside the original.\n\n${updatedEps.map((ep) => `• ${ep.title}`).join("\n")}\n\nThe original canvas is preserved.`, canvasId: newId ?? undefined }]);
+                                      }
+                                    } catch (err: any) {
+                                      setMessages((m) => [...m, { id: `msg-${Date.now() + 1}`, type: "ai", content: `Apply failed: ${err.message}` }]);
+                                    } finally { setIsAnalyzing(false); }
+                                  }}
+                                  disabled={isAnalyzing}
+                                  className="mt-1 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#C7F711]/10 border border-[#C7F711]/30 text-[#C7F711] text-[13px] font-semibold hover:bg-[#C7F711]/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                                >
+                                  <Zap className="w-3.5 h-3.5" />
+                                  Apply All Changes
+                                </button>
+                              </div>
+                            )}
                             {/* Canvas chip */}
                             {message.canvasId && (
                               <button
@@ -1189,7 +1447,7 @@ export function Dashboard() {
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
-                            handleAnalyze();
+                            handleSend();
                           }
                         }}
                         placeholder="Message TheVbox AI..."
@@ -1197,7 +1455,7 @@ export function Dashboard() {
                         rows={1}
                       />
                       <button
-                        onClick={handleAnalyze}
+                        onClick={handleSend}
                         disabled={!scriptText.trim() || isAnalyzing}
                         className="mb-1 p-2 bg-[#E8E9E8] text-[#0E1921] rounded-full hover:bg-[#C7F711] disabled:opacity-20 disabled:cursor-not-allowed transition-all flex-shrink-0"
                       >
