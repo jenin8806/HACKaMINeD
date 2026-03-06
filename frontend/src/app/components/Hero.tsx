@@ -228,11 +228,11 @@ export function Hero() {
               className="relative px-10 py-4 rounded-xl font-semibold text-lg text-[#0E1921] overflow-hidden group"
               style={{
                 background: "#C7F711",
-                boxShadow: "0 0 30px rgba(199, 247, 17, 0.35), 0 4px 20px rgba(199, 247, 17, 0.2)",
+                boxShadow: "0 4px 16px rgba(199, 247, 17, 0.12)",
               }}
               whileHover={{
                 scale: 1.05,
-                boxShadow: "0 0 50px rgba(199, 247, 17, 0.5), 0 8px 30px rgba(199, 247, 17, 0.3)",
+                boxShadow: "0 6px 24px rgba(199, 247, 17, 0.20)",
               }}
               whileTap={{ scale: 0.97 }}
             >

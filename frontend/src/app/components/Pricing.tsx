@@ -1,7 +1,6 @@
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 import { Check, Zap } from "lucide-react";
-import { Link } from "react-router";
 
 const plans = [
   {
@@ -113,14 +112,14 @@ export function Pricing() {
                   : "rgba(49,74,82,0.35)",
                 backdropFilter: "blur(12px)",
                 boxShadow: plan.highlight
-                  ? "0 0 60px rgba(199,247,17,0.15), 0 20px 40px rgba(0,0,0,0.4)"
+                  ? "0 0 30px rgba(199,247,17,0.07), 0 16px 32px rgba(0,0,0,0.35)"
                   : "none",
               }}
               whileHover={{
                 y: -6,
                 boxShadow: plan.highlight
-                  ? "0 0 80px rgba(199,247,17,0.25), 0 30px 60px rgba(0,0,0,0.4)"
-                  : "0 20px 50px rgba(199,247,17,0.08)",
+                  ? "0 0 30px rgba(199,247,17,0.10), 0 20px 40px rgba(0,0,0,0.35)"
+                  : "0 12px 30px rgba(0,0,0,0.25)",
               }}
             >
               {plan.highlight && (
@@ -165,24 +164,22 @@ export function Pricing() {
                 ))}
               </ul>
 
-              <Link to="/dashboard">
-                <motion.button
-                  className={`w-full py-3.5 rounded-xl font-semibold transition-all duration-300 ${
-                    plan.highlight
-                      ? "bg-[#C7F711] text-[#0E1921] hover:bg-[#A9F42C]"
-                      : "border border-[#C7F711]/40 text-[#C7F711] hover:bg-[#C7F711]/10 hover:border-[#C7F711]"
-                  }`}
-                  style={
-                    plan.highlight
-                      ? { boxShadow: "0 0 25px rgba(199,247,17,0.3)" }
-                      : {}
-                  }
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {plan.cta}
-                </motion.button>
-              </Link>
+              <motion.button
+                className={`w-full py-3.5 rounded-xl font-semibold transition-all duration-300 ${
+                  plan.highlight
+                    ? "bg-[#C7F711] text-[#0E1921] hover:bg-[#A9F42C]"
+                    : "border border-[#C7F711]/40 text-[#C7F711] hover:bg-[#C7F711]/10 hover:border-[#C7F711]"
+                }`}
+                style={
+                  plan.highlight
+                    ? { boxShadow: "0 4px 14px rgba(199,247,17,0.12)" }
+                    : {}
+                }
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {plan.cta}
+              </motion.button>
             </motion.div>
           ))}
         </div>

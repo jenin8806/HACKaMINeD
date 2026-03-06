@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { useUser } from "../contexts/UserContext";
 import { UserSettingsDialog } from "./UserSettingsDialog";
+import FilmCamera3D from "./FilmCamera3D";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -849,9 +850,7 @@ export function Dashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   className="my-auto flex flex-col items-center justify-center pb-16 w-full"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-[#C7F711]/10 flex items-center justify-center mb-5">
-                    <Sparkles className="w-5 h-5 text-[#C7F711]" />
-                  </div>
+                  <FilmCamera3D />
                   <h2 className="text-2xl sm:text-3xl font-semibold text-[#E8E9E8] mb-2 tracking-tight">
                     Welcome back, {user.username}
                   </h2>

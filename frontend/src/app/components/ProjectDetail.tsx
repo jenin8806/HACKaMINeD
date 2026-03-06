@@ -251,10 +251,10 @@ export function ProjectDetail() {
         >
           <Link to={`/project/${id}/episodes`}>
             <motion.button
-              className="px-10 py-4 bg-[#C7F711] text-[#0E1921] rounded-xl font-semibold text-lg shadow-lg shadow-[#C7F711]/50 hover:shadow-[#C7F711]/70 transition-all duration-300"
+              className="px-10 py-4 bg-[#C7F711] text-[#0E1921] rounded-xl font-semibold text-lg shadow-md shadow-[#C7F711]/20 hover:shadow-[#C7F711]/30 transition-all duration-300"
               whileHover={{
                 scale: 1.05,
-                boxShadow: "0 20px 40px rgba(199, 247, 17, 0.4)",
+                boxShadow: "0 12px 28px rgba(199, 247, 17, 0.15)",
               }}
               whileTap={{ scale: 0.95 }}
             >

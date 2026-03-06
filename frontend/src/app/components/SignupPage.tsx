@@ -392,10 +392,10 @@ export function SignupPage() {
               className="relative w-full h-11 rounded-xl font-semibold text-sm text-[#0E1921] overflow-hidden group disabled:opacity-70"
               style={{
                 background: "#C7F711",
-                boxShadow: "0 0 25px rgba(199, 247, 17, 0.25), 0 4px 15px rgba(199, 247, 17, 0.15)",
+                boxShadow: "0 4px 14px rgba(199, 247, 17, 0.12)",
               }}
               whileHover={{
-                boxShadow: "0 0 40px rgba(199, 247, 17, 0.4), 0 8px 25px rgba(199, 247, 17, 0.25)",
+                boxShadow: "0 6px 20px rgba(199, 247, 17, 0.18)",
               }}
               whileTap={{ scale: 0.98 }}
             >
