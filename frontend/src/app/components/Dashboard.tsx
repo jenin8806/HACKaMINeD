@@ -1074,10 +1074,10 @@ export function Dashboard() {
                     <FolderOpen className="w-4 h-4 text-[#E8E9E8]/30 group-hover:text-[#C7F711] transition-colors" />
                     <span className="text-sm">My Projects</span>
                   </Link>
-                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[#E8E9E8]/55 hover:bg-white/5 hover:text-[#E8E9E8] transition-all group">
+                  {/* <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[#E8E9E8]/55 hover:bg-white/5 hover:text-[#E8E9E8] transition-all group">
                     <Brain className="w-4 h-4 text-[#E8E9E8]/30 group-hover:text-[#C7F711] transition-colors" />
                     <span className="text-sm">Memory</span>
-                  </button>
+                  </button> */}
                 </nav>
               </div>
 
