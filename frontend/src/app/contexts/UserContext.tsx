@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {
   onAuthStateChanged,
@@ -14,7 +15,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '../firebase';
 
-const API_URL = 'http://localhost:8000/api/auth';
+const API_URL = import.meta.env.VITE_API_URL;
 
 export interface UserProfile {
   username: string;
