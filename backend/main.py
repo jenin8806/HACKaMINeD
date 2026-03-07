@@ -4,6 +4,10 @@ Auth: Google + Email/Password via Firebase Auth; backend verifies ID tokens and 
 """
 import os
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -57,7 +61,7 @@ app = FastAPI(
 )
 
 # Production-ready CORS configuration
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").strip("/")
 ALLOWED_ORIGINS = [
     FRONTEND_URL,
     # Development origins (always included)
@@ -67,8 +71,10 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
 ]
 
-# Remove duplicates and filter empty strings
-ALLOWED_ORIGINS = list(set([origin for origin in ALLOWED_ORIGINS if origin]))
+# Remove duplicates and empty strings
+ALLOWED_ORIGINS = list(set([origin.strip() for origin in ALLOWED_ORIGINS if origin and origin.strip()]))
+
+print(f"[STARTUP] CORS allowed origins: {ALLOWED_ORIGINS}")  # Debug log
 
 app.add_middleware(
     CORSMiddleware,
