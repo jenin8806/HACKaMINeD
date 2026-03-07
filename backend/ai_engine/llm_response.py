@@ -1,8 +1,13 @@
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=Path(__file__).resolve().parents[1] / ".env")
 import requests
 import json
 
-API_URL = "https://gpt-4-api-free.vercel.app/api/chat"
-API_KEY = "gpt4-iT3LPjJfwdcm9uCus90pfRD1MF4G7R6SnXe5p5bAXKs"
+API_URL = os.getenv("LLM_API_URL", "").strip()
+API_KEY = os.getenv("LLM_API_KEY", "").strip()
 
 SYSTEM_PROMPT = """
 You are VBOX Narrative Intelligence Engine.
