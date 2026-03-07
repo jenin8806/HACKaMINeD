@@ -706,7 +706,7 @@ export function Dashboard() {
       if (!fbUser) throw new Error("Not signed in");
       const token = await fbUser.getIdToken();
 
-      const res = await fetch("http://localhost:8000/api/analyze", {
+      const res = await fetch("https://hackamined.onrender.com/api/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -895,7 +895,7 @@ export function Dashboard() {
         },
       })) ?? [];
 
-      const res = await fetch("http://localhost:8000/api/chat", {
+      const res = await fetch("https://hackamined.onrender.com/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ message: userText, canvas_episodes: canvasEpisodes, apply_changes: applyMode }),
@@ -1358,7 +1358,7 @@ export function Dashboard() {
                                         segments: { hook_0_15s: ep.segments.hook, conflict_15_45s: ep.segments.conflict, midpoint_twist_45_60s: ep.segments.twist, escalation_60_75s: ep.segments.escalation, cliffhanger_75_90s: ep.segments.cliffhanger },
                                         improvements: { what: ep.improvements?.what || ep.improvementSuggestion || "", why: ep.improvements?.why || "", script_fix: ep.improvements?.scriptFix || "" },
                                       })) ?? [];
-                                      const res = await fetch("http://localhost:8000/api/chat", {
+                                      const res = await fetch("https://hackamined.onrender.com/api/chat", {
                                         method: "POST",
                                         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                                         body: JSON.stringify({ message: "apply changes", canvas_episodes: canvasEpisodes, apply_changes: true }),
