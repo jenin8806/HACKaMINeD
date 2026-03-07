@@ -19,7 +19,7 @@ const plans = [
   },
   {
     name: "Creator",
-    price: "$29",
+    price: "₹499",
     period: "/mo",
     description: "For serious storytellers and content creators.",
     features: [
@@ -35,7 +35,7 @@ const plans = [
   },
   {
     name: "Studio",
-    price: "$99",
+    price: "₹1,299",
     period: "/mo",
     description: "For production teams and professional studios.",
     features: [

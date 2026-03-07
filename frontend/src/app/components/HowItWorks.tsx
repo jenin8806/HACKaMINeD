@@ -1,6 +1,6 @@
 ﻿import { motion, useInView, AnimatePresence } from "motion/react";
 import { useRef, useState } from "react";
-import { Upload, Sparkles, Target, Lightbulb, Send, ChevronDown } from "lucide-react";
+import { Upload, Sparkles, Target, Lightbulb, RefreshCw, ChevronDown } from "lucide-react";
 
 const steps = [
   {
@@ -13,7 +13,7 @@ const steps = [
     icon: Sparkles,
     title: "AI Segments the Story",
     description: "Our AI analyzes narrative structure, pacing, and emotional beats to create natural episode breaks.",
-    details: "Powered by custom LLMs fine-tuned on thousands of successful episodic scripts, the engine maps out story arcs, character developments, and subplots to find the absolute perfect points for an episode break."
+    details: "Powered by LLMs fine-tuned on thousands of successful episodic scripts, the engine maps out story arcs, character developments, and subplots to find the absolute perfect points for an episode break."
   },
   {
     icon: Target,
@@ -28,10 +28,10 @@ const steps = [
     details: "Our intelligent coach points out structural weaknesses, suggests moving specific scenes forward or backward, and highlights dialogue that can be sharper to enhance the overall episode rhythm."
   },
   {
-    icon: Send,
-    title: "Export & Publish",
-    description: "Download your episodic breakdown with all analytics, ready for production or pitching.",
-    details: "Export cleanly to industry-standard formats including Final Draft, PDF, or interactive web presentations. Generate executive summaries for producers and full breakdowns for writers rooms."
+    icon: RefreshCw,
+    title: "Iterative Re-Scoring",
+    description: "Apply AI suggestions to your script and instantly regenerate all metrics to see exactly how each change improves your score.",
+    details: "Once you apply any AI-recommended edit — sharpening a cliffhanger, adjusting pacing, or deepening a character beat — TheVbox re-runs the full analytics pipeline on the updated script. Every score refreshes: cliffhanger ratings, emotion curves, retention probability. Compare before-and-after snapshots and keep refining until your metrics match your creative vision."
   },
 ];
 

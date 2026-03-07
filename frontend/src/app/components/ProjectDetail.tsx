@@ -102,15 +102,16 @@ export function ProjectDetail() {
 
                 {/* Overall Score Badge */}
                 <motion.div
-                  className="px-8 py-6 rounded-2xl bg-gradient-to-br from-[#C7F711]/20 to-[#A9F42C]/20 border-2 border-[#C7F711]/50 backdrop-blur-sm"
+                  className="px-8 py-6 rounded-2xl border border-[#C7F711]/20 backdrop-blur-sm"
+                  style={{ background: "rgba(49, 74, 82, 0.35)" }}
                   whileHover={{ scale: 1.05 }}
                 >
                   <div className="text-center">
-                    <div className="text-sm text-[#E8E9E8]/70 mb-2">Overall Score</div>
-                    <div className="text-5xl font-bold text-[#C7F711] mb-1">
+                    <div className="text-sm text-[#E8E9E8]/50 mb-2 tracking-widest uppercase text-xs">Overall Score</div>
+                    <div className="text-5xl font-bold text-[#C7F711] mb-1" style={{ textShadow: "0 0 22px rgba(199,247,17,0.4)" }}>
                       {project.overallScore.toFixed(1)}
                     </div>
-                    <div className="text-sm text-[#E8E9E8]/60">out of 10</div>
+                    <div className="text-xs text-[#E8E9E8]/40 tracking-widest uppercase">out of 10</div>
                   </div>
                 </motion.div>
               </div>

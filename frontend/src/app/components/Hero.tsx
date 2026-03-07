@@ -53,7 +53,7 @@ export function Hero() {
       const img = frames[frameIndex];
       const iw = img.naturalWidth || img.width;
       const ih = img.naturalHeight || img.height;
-      const scale = Math.max(w / iw, h / ih);
+      const scale = Math.max(w / iw, h / ih) * 0.91;
       const sw = iw * scale;
       const sh = ih * scale;
       const sx = (w - sw) * 0.3;

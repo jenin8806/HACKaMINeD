@@ -7,6 +7,7 @@ import {
   Heart,
   Lightbulb,
   Download,
+  RefreshCw,
 } from "lucide-react";
 
 const features = [
@@ -60,15 +61,15 @@ const features = [
       "Beyond analysis, TheVbox actively co-creates with you. The Optimization Engine generates specific, scene-level recommendations: sharpen this cold open, move this reveal two scenes earlier, add a micro-tension beat here. Each suggestion is ranked by predicted audience-impact score and can be accepted, dismissed, or used as a creative springboard.",
     bg: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=60",
   },
-  {
-    icon: Download,
-    title: "Export & Publish Ready",
+ {
+    icon: RefreshCw,
+    title: "Iterative Re-Scoring",
     description:
-      "One-click export of complete episodic breakdowns with all analytics — ready for production teams, streaming pitches, or publishers.",
-    tag: "Export",
+      "Apply AI-suggested edits to your script and instantly regenerate all metrics — see exactly how each change moves the needle on engagement and retention.",
+    tag: "Re-Scoring",
     detail:
-      "Export your full analysis as a polished PDF deck, a structured JSON feed for your production pipeline, or a shareable web link for collaborators. Every export includes episode synopses, cliffhanger scores, emotion charts, and optimisation notes — formatted to impress commissioning editors, co-producers, or your own writing room.",
-    bg: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=800&q=60",
+      "Iterative Re-Scoring closes the loop between suggestion and impact. Once you apply any AI-recommended edit — sharpening a cliffhanger, adjusting pacing, or deepening a character beat — TheVbox re-runs the full analytics pipeline on the updated script. Every score refreshes in real time: cliffhanger ratings, emotion curves, retention probability. Compare before-and-after snapshots, track cumulative improvement across multiple revision rounds, and keep refining until your metrics match your creative vision.",
+    bg: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=60",
   },
 ];
 
