@@ -45,10 +45,16 @@ class ProfileUpdateBody(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: init Firebase Admin if credentials available
+    # Checkpoint: startup diagnostics
+    print("[STARTUP] Loading...")
+    print("[CHECKPOINT] .env loaded:", bool(os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or os.getenv("FIREBASE_SERVICE_ACCOUNT") or os.getenv("LLM_API_URL")))
+    print("[CHECKPOINT] LLM_API_URL:", "set" if os.getenv("LLM_API_URL") else "NOT SET")
     from app.firebase_init import init_firebase
-    init_firebase()
+    fb_ok = init_firebase()
+    print("[CHECKPOINT] Firebase Admin:", "✓ initialized" if fb_ok else "✗ NOT initialized (auth/Firestore will fail)")
     load_models()
+    print("[CHECKPOINT] Models loaded")
+    print("[STARTUP] Ready.")
     yield
     # Shutdown: nothing to do
     pass
