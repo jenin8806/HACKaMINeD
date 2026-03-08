@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -14,8 +14,7 @@ import {
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { auth } from '../firebase';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { API_AUTH_URL } from '../config/api';
 
 export interface UserProfile {
   username: string;
@@ -82,7 +81,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         // Try to fetch extended profile from backend
         try {
           const token = await fbUser.getIdToken();
-          const res = await fetch(`${API_URL}/me`, {
+          const res = await fetch(`${API_AUTH_URL}/me`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
@@ -123,7 +122,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (updates.username != null) body.username = updates.username;
       if (updates.email != null) body.email = updates.email;
       if (updates.profilePic != null) body.profile_pic = updates.profilePic;
-      const res = await fetch(`${API_URL}/profile`, {
+      const res = await fetch(`${API_AUTH_URL}/profile`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),
@@ -185,7 +184,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       // Send profile to backend for Firestore storage
       try {
         const token = await credential.user.getIdToken();
-        await fetch(`${API_URL.replace('/auth', '/auth')}/signup`, {
+        await fetch(`${API_AUTH_URL}/signup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ username, email }),

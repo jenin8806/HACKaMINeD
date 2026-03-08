@@ -37,6 +37,32 @@
 
 ---
 
+## 🚀 Quick Start (Windows)
+
+**Easiest way to run on localhost:**
+
+1. Make sure you have Python 3.9+ and Node.js 18+ installed
+2. Double-click `start.ps1` in the root directory
+
+That's it! Two windows will open:
+- Backend: http://localhost:8000
+- Frontend: http://localhost:5173
+
+**Or run manually:**
+```powershell
+# Terminal 1 - Backend
+cd backend
+.\start.ps1
+
+# Terminal 2 - Frontend  
+cd frontend
+.\start.ps1
+```
+
+📖 **Detailed setup guide:** See [LOCALHOST_SETUP.md](LOCALHOST_SETUP.md)
+
+---
+
 ## ◈ What is TheVbox?
 
 **TheVbox** is a next-generation AI storytelling platform built for creators, directors, and writers who want to engineer binge-worthy content — not just write it.
@@ -231,13 +257,10 @@ npm install
 **Create a `.env` file in `frontend/`:**
 
 ```env
-VITE_FIREBASE_API_KEY=your_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
+VITE_API_URL=http://localhost:8000/api/auth
 ```
+
+> **Note:** Firebase config is already set in `src/app/firebase.ts`. For production, update that file or use environment variables.
 
 **Run the frontend:**
 
@@ -246,6 +269,24 @@ npm run dev
 ```
 
 > App: `http://localhost:5173`
+
+---
+
+### 4 — Quick Start Scripts (Windows)
+
+We've included PowerShell scripts for easy startup:
+
+```powershell
+# Start both backend and frontend
+.\start.ps1
+
+# Or individually:
+cd backend
+.\start.ps1
+
+cd frontend
+.\start.ps1
+```
 
 ---
 

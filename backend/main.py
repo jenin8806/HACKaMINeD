@@ -61,18 +61,28 @@ app = FastAPI(
 )
 
 # Production-ready CORS configuration
+# FRONTEND_URL: primary frontend (e.g. https://the-v-box.vercel.app)
+# CORS_ORIGINS: comma-separated additional origins (e.g. https://the-v-box.vercel.app,http://localhost:5173)
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").strip("/")
-ALLOWED_ORIGINS = [
+CORS_ORIGINS_STR = os.getenv("CORS_ORIGINS", "")
+
+# Build allowed origins: FRONTEND_URL + CORS_ORIGINS + dev defaults
+_base_origins = [
     FRONTEND_URL,
-    # Development origins (always included)
+    # Deployed frontend (Vercel)
+    "https://the-v-box.vercel.app",
+    # Development origins
     "http://localhost:5173",
     "http://localhost:3000",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:3000",
 ]
+# Add any comma-separated origins from env
+if CORS_ORIGINS_STR:
+    _base_origins.extend([o.strip() for o in CORS_ORIGINS_STR.split(",") if o.strip()])
 
 # Remove duplicates and empty strings
-ALLOWED_ORIGINS = list(set([origin.strip() for origin in ALLOWED_ORIGINS if origin and origin.strip()]))
+ALLOWED_ORIGINS = list(set([origin.strip() for origin in _base_origins if origin and origin.strip()]))
 
 print(f"[STARTUP] CORS allowed origins: {ALLOWED_ORIGINS}")  # Debug log
 
